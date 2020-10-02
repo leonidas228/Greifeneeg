@@ -22,7 +22,7 @@ n_jobs = 8
 n_perm = 200
 
 for filename in filelist:
-    this_match = re.match("NAP_(\d{3})_(.*)-epo.fif",filename)
+    this_match = re.match("d_NAP_(\d{3})_(.*)-epo.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds:

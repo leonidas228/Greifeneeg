@@ -22,6 +22,7 @@ tfr_lower_thresh = 1e-6
 pre_stim_buffer = 20
 post_stim_buffer = 20
 analy_duration = 60
+between_duration = 30
 filelist = listdir(proc_dir)
 epolen = 10
 min_bad = 25
@@ -99,13 +100,17 @@ for filename in filelist:
                     idx = tfr_under_cross_inds[tfr_under_cross_inds > min_bad_idx][0]
                     end = raw.times[idx] + post_stim_buffer
                     duration = end - begin
-                    these_annotations.append(begin,duration,
+                    if stim_idx == 0:
+                        pre_dur = analy_duration
+                        post_dur = between_duration
+                    else:
+                        pre_dur = between_duration
+                        post_dur = between_duration
+                    these_annotations.append(begin, duration,
                                              "BAD_Stimulation {}".format(stim_idx))
-                    these_annotations.append(begin - analy_duration,
-                                             analy_duration,
+                    these_annotations.append(begin - pre_dur, pre_dur,
                                              "Pre_Stimulation {}".format(stim_idx))
-                    these_annotations.append(begin + duration,
-                                             analy_duration,
+                    these_annotations.append(begin + duration, post_dur,
                                              "Post_Stimulation {}".format(stim_idx))
                     earliest_idx = idx
                     stim_idx += 1
@@ -121,6 +126,12 @@ for filename in filelist:
                     winner_std =  dur_std
                     winner_id = tfr_upper_thresh
                     winner_durations = durations.copy()
+
+            # last post-stimulation period should be longer
+            last_annot = winner_annot[-1].copy()
+            winner_annot.delete(-1)
+            winner_annot.append(last_annot["onset"], analy_duration, last_annot["description"])
+
             raw.set_annotations(winner_annot)
             print("\nThreshold of {} was optimal.\nDurations:".format(winner_id))
             print(winner_durations)

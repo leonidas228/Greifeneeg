@@ -30,4 +30,4 @@ for filename in filelist:
         ica = read_ica(proc_dir+icafile)
         bad_inds, scores = ica.find_bads_eog(raw)
         new_raw = ica.apply(raw, exclude=bad_inds)
-        new_raw.save("{}ibcsaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond))
+        new_raw.save("{}ibcsaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),overwrite=True)

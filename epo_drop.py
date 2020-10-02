@@ -24,7 +24,7 @@ for filename in filelist:
         epo_data = epo.get_data()[:,pick,]
         epo_data_flat = np.abs(epo_data.flatten())
         thresh = np.percentile(epo_data_flat, 99.9)
-        thresh = 1.2e-4
+        thresh = 1e-4
         print("Threshold: {}".format(thresh))
         drop_inds = []
         for epo_idx in range(len(epo)):

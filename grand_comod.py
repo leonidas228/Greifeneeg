@@ -20,12 +20,20 @@ fs = 500
 n_jobs = 8
 n_perm = 200
 
+# do everything
 param_grid = {"Index":[0,1,2,3,4], "Cond":["eig30s", "fix30s"],
               "PrePost":["Pre", "Post"], "OscType":["SO", "deltO"]}
-grob_param_grid =
+infile = "{}grand-epo.fif".format(proc_dir)
+format_string = "{}{}_{}_{}_{}_{}"
+# just do before first stim and after last stim
+param_grid = {"Cond":["eig30s", "fix30s"],
+              "PrePost":["Pre", "Post"], "OscType":["SO", "deltO"]}
+infile = "{}grand_ba-epo.fif".format(proc_dir)
+format_string = "{}{}_{}_{}_{}"
+
 all_params = list(ParameterGrid(param_grid))
 
-epo = mne.read_epochs("{}grand-epo.fif".format(proc_dir))
+epo = mne.read_epochs(infile)
 for params in all_params:
     match_string = ""
     for k,v in params.items():
@@ -43,12 +51,12 @@ for params in all_params:
         p.idpac = (6, 3, 4)
         pac = p.fit(phases, amplitudes, n_jobs=n_jobs, n_perm=n_perm)
         pac_pickle = (p, pac)
-        with open("{}{}_{}_{}_{}_{}_pac.pickle".format(proc_dir, *params.values(), chan), "wb") as f:
+        with open(format_string.format(proc_dir, *params.values(), chan)+"_pac.pickle", "wb") as f:
             pickle.dump(pac_pickle, f)
         p.idpac = (6, 0, 0)
         pac = p.fit(phases, amplitudes, n_jobs=n_jobs)
         pac_pickle = (p, pac)
-        with open("{}{}_{}_{}_{}_{}_raw_pac.pickle".format(proc_dir, *params.values(), chan), "wb") as f:
+        with open(format_string.format(proc_dir, *params.values(), chan)+"_raw_pac.pickle", "wb") as f:
             pickle.dump(pac_pickle, f)
 
         erp = EventRelatedPac(f_pha=[0.5,1.25], f_amp=high_fq_range, dcomplex="wavelet")
@@ -57,15 +65,15 @@ for params in all_params:
         erpac = erp.fit(phases, amplitudes, method="gc", n_perm=n_perm,
                         n_jobs=n_jobs)
         erpac_pickle = (erp, erpac)
-        with open("{}{}_{}_{}_{}_{}_erpac.pickle".format(proc_dir, *params.values(), chan), "wb") as f:
+        with open(format_string.format(proc_dir, *params.values(), chan)+"_erpac.pickle", "wb") as f:
             pickle.dump(erpac_pickle, f)
         erpac = erp.fit(phases, amplitudes, method="gc", n_jobs=n_jobs)
         erpac_pickle = (erp, erpac)
-        with open("{}{}_{}_{}_{}_{}_raw_erpac.pickle".format(proc_dir, *params.values(), chan), "wb") as f:
+        with open(format_string.format(proc_dir, *params.values(), chan)+"_raw_erpac.pickle", "wb") as f:
             pickle.dump(erpac_pickle, f)
 
         pp = PreferredPhase(f_pha=[0.5,1.25], f_amp=high_fq_range, dcomplex="wavelet")
         pp_res = pp.fit(phases, amplitudes)
         pp_pickle = (pp, pp_res)
-        with open("{}{}_{}_{}_{}_{}_pp.pickle".format(proc_dir, *params.values(), chan), "wb") as f:
+        with open(format_string.format(proc_dir, *params.values(), chan)+"_pp.pickle", "wb") as f:
             pickle.dump(pp_pickle, f)

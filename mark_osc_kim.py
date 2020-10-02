@@ -216,6 +216,6 @@ for filename in filelist:
             df_dict["Subj"] = subj
             df_dict["Cond"] = cond
         df = pd.DataFrame.from_dict(df_dict)
-        epo = mne.Epochs(raw, events[0], tmin=-1, tmax=1, detrend=1,
+        epo = mne.Epochs(raw, events[0], tmin=-.75, tmax=.75, detrend=1,
                          baseline=None, metadata=df)
         epo.save("{}NAP_{}_{}-epo.fif".format(proc_dir,subj,cond), overwrite=True)

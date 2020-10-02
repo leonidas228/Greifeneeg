@@ -24,4 +24,4 @@ for filename in filelist:
         bad_chans = bcf.recommend(raw)
         print(bad_chans)
         raw.info["bads"].extend(bad_chans)
-        raw.save("{}bcsaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond))
+        raw.save("{}bcsaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),overwrite=True)

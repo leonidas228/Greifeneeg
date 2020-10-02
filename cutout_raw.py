@@ -19,9 +19,8 @@ for filename in filelist:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds or "{}_{}".format(subj,cond) in excludes:
             continue
-        if "csaf_NAP_{}_{}-raw.fif".format(subj,cond) in filelist:
-            print("boop")
-            continue
+        # if "csaf_NAP_{}_{}-raw.fif".format(subj,cond) in filelist:
+        #     continue
         raw = mne.io.Raw(proc_dir+filename,preload=True)
         raws = []
         for annot in raw.annotations:
