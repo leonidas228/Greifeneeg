@@ -21,7 +21,7 @@ tfr_thresh_range = list(np.linspace(0.001,0.008,50))
 tfr_lower_thresh = 1e-6
 pre_stim_buffer = 20
 post_stim_buffer = 20
-analy_duration = 60
+analy_duration = 30
 between_duration = 30
 filelist = listdir(proc_dir)
 epolen = 10
@@ -163,5 +163,9 @@ for filename in filelist:
             else:
                 f.write("{}\t{}\t{}\t{}\t{}\n".format(subj, tag, stim_type+stim_len, fmax, stim_idx))
 
-        raw.save("{}af_NAP_{}_{}{}-raw.fif".format(proc_dir,subj,stim_type,stim_len),
-                 overwrite=True)
+        if stim_type == "sham":
+            raw.save("{}f_NAP_{}_{}{}-raw.fif".format(proc_dir,subj,stim_type,stim_len),
+                     overwrite=True)
+        else:
+            raw.save("{}af_NAP_{}_{}{}-raw.fif".format(proc_dir,subj,stim_type,stim_len),
+                     overwrite=True)

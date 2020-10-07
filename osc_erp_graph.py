@@ -37,18 +37,34 @@ for col in ["blue", "red", "green", "cyan", "purple"]:
 
 for osc in ["SO"]:
     epo0 = epo["OscType=='{}'".format(osc)]
-    for cond in ["eig", "fix"]:
-        for timelen in ["30s", "2m", "5m"]:
-            epo1 = epo0["Cond=='{}{}'".format(cond,timelen)]
-            evo_inds = []
-            for ind in range(5):
-                epo2 = epo1["Index=='{}'".format(ind)]
-                for pp in ["Pre", "Post"]:
-                    epo3 = epo2["PrePost=='{}'".format(pp)]
-                    evo = epo3.average()
-                    evo.comment = "{} {}{} {} {}".format(osc, cond, timelen,
-                                                         ind, pp)
-                    evo_inds.append(evo)
-            mne.viz.plot_compare_evokeds(evo_inds, picks="central",
-                                         colors=colors, linestyles=styles,
-                                         ylim={"eeg":(-40,20)})
+    for ort in ["central"]:
+        epo1 = epo0["Ort=='{}'".format(ort)]
+        for cond in ["eig", "fix"]:
+            for timelen in ["30s", "2m", "5m"]:
+                epo2 = epo1["Cond=='{}{}'".format(cond,timelen)]
+                evo_inds = []
+                for ind in range(5):
+                    epo3 = epo2["Index=='{}'".format(ind)]
+                    for pp in ["Pre", "Post"]:
+                        epo4 = epo3["PrePost=='{}'".format(pp)]
+                        evo = epo4.average()
+                        evo.comment = "{} {} {}{} {} {}".format(ort, osc, cond,
+                                                                timelen, ind, pp)
+                        evo_inds.append(evo)
+
+                mne.viz.plot_compare_evokeds(evo_inds, picks=ort,
+                                             colors=colors, linestyles=styles,
+                                             ylim={"eeg":(-45,20)})
+
+        epo2 = epo1["Cond=='sham'"]
+        evo_inds = []
+        for ind in range(5):
+            epo3 = epo2["Index=='{}'".format(ind)]
+            for pp in ["Pre", "Post"]:
+                epo4 = epo3["PrePost=='{}'".format(pp)]
+                evo = epo4.average()
+                evo.comment = "{} {} sham {} {}".format(ort, osc, ind, pp)
+                evo_inds.append(evo)
+        mne.viz.plot_compare_evokeds(evo_inds, picks=ort,
+                                     colors=colors, linestyles=styles,
+                                     ylim={"eeg":(-45,20)})

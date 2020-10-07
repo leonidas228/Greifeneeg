@@ -16,10 +16,12 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir
 
 freqs = np.load("{}freq_mat.npy".format(proc_dir))
+# # just the EOG and EMG
+# freqs = freqs[:,-2:]
 ys = np.load("{}ys.npy".format(proc_dir))
 
 x_train, x_test, y_train, y_test = train_test_split(freqs, ys, test_size=0.2)
-hyper_params = {"n_estimators":[50,100,150,200], "max_features":[None, "sqrt", "log2"]}
+hyper_params = {"n_estimators":[100,150,200,250,300], "max_features":[None, "sqrt", "log2"]}
 
 clf = GridSearchCV(RandomForestClassifier(), hyper_params, n_jobs=4, verbose=10)
 clf.fit(x_train, y_train)

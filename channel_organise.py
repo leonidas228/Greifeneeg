@@ -13,6 +13,7 @@ proc_dir = root_dir+"proc/"
 filelist = listdir(proc_dir)
 
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s"]
+conds = ["sham"]
 excludes = []
 
 chan_dict = {"Vo":"eog","Vu":"eog","Re":"eog","Li":"eog","MovRe":"misc",
@@ -25,7 +26,7 @@ with open("nonEEGchans.txt","wt") as f:
     f.write("\tEEG\n")
 
 for filename in filelist:
-    this_match = re.match("af_NAP_(\d{3})_(.*)-raw.fif",filename)
+    this_match = re.match("caf_NAP_(\d{3})_(.*)-raw.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
         if (cond not in conds) or ("{}_{}".format(subj,cond) in excludes):
@@ -72,7 +73,7 @@ for filename in filelist:
             non_eeg = mne.io.RawArray(data, info)
             raw.add_channels([non_eeg], force_update_info=True)
             raw.drop_channels(orig_chans)
-            raw.save("{}saf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
+            raw.save("{}scaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
                          overwrite=True)
         except:
             pass

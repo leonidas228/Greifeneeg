@@ -9,12 +9,13 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s"]
+conds = ["sham"]
 filelist = listdir(proc_dir)
 excludes = ["031_eig30s", "045_fix5m", "046_eig30s"]
 excludes = []
 
 for filename in filelist:
-    this_match = re.match("saf_NAP_(\d{3})_(.*)-raw.fif",filename)
+    this_match = re.match("af_NAP_(\d{3})_(.*)-raw.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds or "{}_{}".format(subj,cond) in excludes:
@@ -38,5 +39,5 @@ for filename in filelist:
             continue
         raw_cut = raws[0]
         raw_cut.append(raws[1:])
-        raw_cut.save("{}csaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
+        raw_cut.save("{}caf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
                      overwrite=True)

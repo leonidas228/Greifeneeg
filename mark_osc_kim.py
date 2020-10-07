@@ -4,7 +4,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.signal import argrelmax
+from scipy.signal import find_peaks
 from os.path import isdir
 plt.ion()
 
@@ -20,16 +20,18 @@ class OscEvent():
         self.event_id = None
         self.event_annot = None
 
-def find_peaks(signal):
-    sig_abs = abs(signal)
-    order = len(sig_abs) // min_samples
-    peaks = argrelmax(sig_abs, order=order)[0]
-    return peaks
+# def find_peaks(signal):
+#     sig_abs = abs(signal)
+#     order = len(sig_abs) // min_samples
+#     peaks = argrelmax(sig_abs, order=order)[0]
+#     return peaks
 
 def check_trough_annot(desc):
     event = None
     if "Trough" in desc:
         event = 0
+        if "posterior" in desc:
+            event += 200
         if "deltO" in desc:
             event += 100
         if "Post" in desc:
@@ -110,6 +112,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
+conds = ["sham"]
 filelist = listdir(proc_dir)
 chan_groups = {"central":["Fz","FC1","FC2","Cz","CP1","CP2","Pz"]}
 peak_percentile = 80
@@ -121,7 +124,7 @@ includes = ["017_eig30s", "025_fix30s"]
 includes = []
 
 for filename in filelist:
-    this_match = re.match("ibcsaf_NAP_(\d{3})_(.*)-raw.fif",filename)
+    this_match = re.match("ibscaf_NAP_(\d{3})_(.*)-raw.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds:
@@ -142,15 +145,19 @@ for filename in filelist:
 
         # zero crossings
         zero_xs = {}
+        pick_annots = []
         for k in chan_groups.keys():
             pick_ind = mne.pick_channels(raw_work.ch_names, include=[k])
             signal = raw_work.get_data()[pick_ind,].squeeze()
+
             # need to add infinitesimals to zeros to prevent weird x-crossing bugs
+            for null_idx in list(np.where(signal==0)[0]):
+                if null_idx:
+                    signal[null_idx] = 1e-16*np.sign(signal[null_idx-1])
+                else:
+                    signal[null_idx] = 1e-16*np.sign(signal[null_idx+1])
 
-            for null_idx in list(np.where(signal==0)):
-                signal[null_idx] = 1e-16*np.sign(signal[null_idx-1])
             zero_x_inds = (np.where((signal[:-1] * signal[1:]) < 0)[0]) + 1
-
             # cycle through negative crossings
             neg_x0_ind = 1 if signal[0] < 0 else 2
             osc_events = []
@@ -162,7 +169,7 @@ for filename in filelist:
                     continue
                 time0 = raw_work.first_time + raw_work.times[idx0]
                 time1 = raw_work.first_time + raw_work.times[idx2]
-                peak_time_idx = np.max(find_peaks(signal[idx0:idx1])) + idx0
+                peak_time_idx = np.max(find_peaks(signal[idx0:idx1])[0]) + idx0
                 trough_time_idx = np.argmin(signal[idx1:idx2]) + idx1
                 peak_amp, trough_amp = signal[peak_time_idx], signal[trough_time_idx]
                 peak_time = raw_work.first_time + raw_work.times[peak_time_idx]
@@ -176,10 +183,8 @@ for filename in filelist:
             peak_thresh = np.percentile(peaks, peak_percentile)
             trough_thresh = np.percentile(troughs, trough_percentile)
 
-            # mark_osc(osc_events, peak_thresh, trough_thresh, k,
-            #          raw_inst=raw_work)
             mark_osc_amp(osc_events, amp_thresh, trough_thresh, k,
-                     raw_inst=raw_work)
+                         raw_inst=raw_work)
             marked_oe = [oe for oe in osc_events if oe.event_id is not None]
             for moe_idx, moe in enumerate(marked_oe):
                 if moe_idx == 0:
@@ -187,21 +192,30 @@ for filename in filelist:
                                                  moe.end_time-moe.start_time,
                                                  "{} {}".format(moe.event_id, moe.event_annot),
                                                  orig_time=raw_work.annotations.orig_time)
-                    raw_work.set_annotations(new_annots)
                 else:
-                    raw_work.annotations.append(moe.start_time, moe.end_time-moe.start_time,
-                                                "{} {}".format(moe.event_id, moe.event_annot))
-                raw_work.annotations.append(moe.trough_time, 0,
-                                            "Trough {} {}".format(moe.event_id, moe.event_annot))
-                raw_work.annotations.append(moe.peak_time, 0,
-                                            "Peak {} {}".format(moe.event_id, moe.event_annot))
-        raw.set_annotations(raw_work.annotations)
-        raw.save("{}aibcsaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
+                    new_annots.append(moe.start_time, moe.end_time-moe.start_time,
+                                      "{} {}".format(moe.event_id, moe.event_annot))
+                new_annots.append(moe.trough_time, 0,
+                                  "Trough {} {}".format(moe.event_id, moe.event_annot))
+                new_annots.append(moe.peak_time, 0,
+                                  "Peak {} {}".format(moe.event_id, moe.event_annot))
+
+            pick_annots.append(new_annots)
+        all_annots = pick_annots[0]
+        for annot in pick_annots[1:]:
+            all_annots += annot
+        raw.set_annotations(all_annots)
+        raw.save("{}aibscaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
                  overwrite=True)
         events = mne.events_from_annotations(raw, check_trough_annot)
-        df_dict = {"Subj":[],"Cond":[],"PrePost":[],"OscType":[],"Index":[]}
+        df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Ort":[],"OscType":[],"Index":[]}
         for event in np.nditer(events[0][:,-1]):
             eve = event.copy()
+            if eve >= 200:
+                df_dict["Ort"].append("posterior")
+                eve -= 200
+            else:
+                df_dict["Ort"].append("central")
             if eve >= 100:
                 df_dict["OscType"].append("deltO")
                 eve -= 100
@@ -217,5 +231,9 @@ for filename in filelist:
             df_dict["Cond"] = cond
         df = pd.DataFrame.from_dict(df_dict)
         epo = mne.Epochs(raw, events[0], tmin=-.75, tmax=.75, detrend=1,
-                         baseline=None, metadata=df)
+                         baseline=None, metadata=df, event_repeated="drop").load_data()
+        frontal_n = len(epo["Ort=='frontal'"])
+        central_n = len(epo["Ort=='central'"])
+        posterior_n = len(epo["Ort=='posterior'"])
+        print("\n\nfrontal: {} posterior: {} central {}\n\n".format(frontal_n, posterior_n, central_n))
         epo.save("{}NAP_{}_{}-epo.fif".format(proc_dir,subj,cond), overwrite=True)
