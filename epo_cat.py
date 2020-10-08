@@ -15,7 +15,8 @@ conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 filelist = listdir(proc_dir)
 chans = ["frontal", "posterior"]
 chans = ["central"]
-df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[]}
+df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[],
+           "Index":[]}
 
 epos = []
 epos_ba = []
@@ -26,8 +27,6 @@ for filename in filelist:
         if cond not in conds:
             continue
         epo = mne.read_epochs(proc_dir+filename)
-        if cond == "sham":
-            breakpoint()
         max_ind = epo.metadata["Index"].max()
         max_ind = 4 if max_ind > 4 else max_ind
         if max_ind < 2:
@@ -40,15 +39,17 @@ for filename in filelist:
         for ort in chans:
             for osc in ["SO","deltO"]:
                 for pp in ["Pre","Post"]:
-                    df_dict["Subj"].append(subj)
-                    df_dict["Cond"].append(cond)
-                    df_dict["OscType"].append(osc)
-                    df_dict["PrePost"].append(pp)
-                    df_dict["Ort"].append(ort)
-                    df_dict["Number"].append(len(epo_ba["PrePost=='{}' and OscType=='{}' and Ort=='{}'".format(pp,osc,ort)]))
+                    for ind in range(max_ind):
+                        df_dict["Subj"].append(subj)
+                        df_dict["Cond"].append(cond)
+                        df_dict["OscType"].append(osc)
+                        df_dict["PrePost"].append(pp)
+                        df_dict["Ort"].append(ort)
+                        df_dict["Index"].append(ind)
+                        df_dict["Number"].append(len(epo["PrePost=='{}' and OscType=='{}' and Ort=='{}' and Index=='{}'".format(pp,osc,ort,ind)]))
 grand_epo = mne.concatenate_epochs(epos)
 grand_epo.save("{}grand-epo.fif".format(proc_dir), overwrite=True)
 grand_epo_ba = mne.concatenate_epochs(epos_ba)
 grand_epo_ba.save("{}grand_ba-epo.fif".format(proc_dir), overwrite=True)
 df = pd.DataFrame.from_dict(df_dict)
-df.to_pickle("{}grand_ba_df.pickle".format(proc_dir))
+df.to_pickle("{}grand_df.pickle".format(proc_dir))
