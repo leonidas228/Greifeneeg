@@ -16,7 +16,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 #conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s"]
-#conds = ["eig30s", "fix30s"]
+conds = ["sham"]
 tfr_thresh_range = list(np.linspace(0.001,0.008,50))
 tfr_lower_thresh = 1e-6
 pre_stim_buffer = 20
@@ -56,6 +56,7 @@ for filename in filelist:
             stim_type = "eig"
 
         if stim_type != "sham":
+            continue
             epo = mne.make_fixed_length_epochs(raw, duration=epolen)
             #epo = mne.Epochs(raw, events, tmin=0, tmax=epolen, baseline=None)
 
