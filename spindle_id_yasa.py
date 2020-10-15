@@ -25,9 +25,9 @@ proc_dir = root_dir+"proc/"
 filelist = listdir(proc_dir)
 channel = "central"
 freq_sp = (12,15)
-corr = 0.5
-rel_pow = 0.2
-rms = 1.5
+corr = None
+rel_pow = 0.1
+rms = 1.3
 duration = (0.35,2)
 
 for filename in filelist:
@@ -46,10 +46,11 @@ for filename in filelist:
             sp = sp.summary()
             for sp_idx in range(len(sp)):
                 onset = ft + sp.iloc[sp_idx]["Start"]
-                dur= sp.iloc[sp_idx]["Duration"]
+                dur = sp.iloc[sp_idx]["Duration"]
                 description = "Spindle {}".format(sp_idx)
                 raw_work.annotations.append(onset, dur, description)
-                onset = ft + sp.iloc[sp_idx]["Peak"]
+                #onset = ft + sp.iloc[sp_idx]["Peak"]
+                onset = onset + dur / 2 # middle of spindle, not 'peak'
                 description = "Spindle peak {}".format(sp_idx)
                 raw_work.annotations.append(onset, 0, description)
                 raw.set_annotations(raw_work.annotations)

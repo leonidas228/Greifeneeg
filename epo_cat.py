@@ -13,15 +13,15 @@ proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 #conds = ["eig30s","fix30s"]
 filelist = listdir(proc_dir)
-chans = ["frontal", "posterior"]
-chans = ["central"]
+chans = ["central", "TFR"]
+
 df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[],
-           "Index":[]}
+           "Index":[], "Stim":[]}
 
 epos = []
 epos_ba = []
 for filename in filelist:
-    this_match = re.match("d_NAP_(\d{3})_(.*)-epo.fif",filename)
+    this_match = re.match("d_NAP_(\d*)_(.*)-epo.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds:
@@ -40,6 +40,10 @@ for filename in filelist:
             for osc in ["SO","deltO"]:
                 for pp in ["Pre","Post"]:
                     for ind in range(max_ind):
+                        if cond != "sham":
+                            df_dict["Stim"].append("Stim")
+                        else:
+                            df_dict["Stim"].append("Sham")
                         df_dict["Subj"].append(subj)
                         df_dict["Cond"].append(cond)
                         df_dict["OscType"].append(osc)

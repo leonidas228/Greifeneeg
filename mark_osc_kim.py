@@ -112,7 +112,6 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
-conds = ["sham"]
 filelist = listdir(proc_dir)
 chan_groups = {"central":["Fz","FC1","FC2","Cz","CP1","CP2","Pz"]}
 peak_percentile = 80
@@ -208,7 +207,8 @@ for filename in filelist:
         raw.save("{}aibscaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
                  overwrite=True)
         events = mne.events_from_annotations(raw, check_trough_annot)
-        df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Ort":[],"OscType":[],"Index":[]}
+        df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Ort":[],"OscType":[],
+                   "Index":[],"Stim":[]}
         for event in np.nditer(events[0][:,-1]):
             eve = event.copy()
             if eve >= 200:
@@ -229,9 +229,13 @@ for filename in filelist:
             df_dict["Index"].append(int(eve))
             df_dict["Subj"] = subj
             df_dict["Cond"] = cond
+            if cond != "sham":
+                df_dict["Stim"].append("stim")
+            else:
+                df_dict["Stim"].append("sham")
         df = pd.DataFrame.from_dict(df_dict)
-        epo = mne.Epochs(raw, events[0], tmin=-.75, tmax=.75, detrend=1,
-                         baseline=None, metadata=df, event_repeated="drop").load_data()
+        epo = mne.Epochs(raw, events[0], tmin=-1.25, tmax=1.25, detrend=None,
+                         baseline=(-1.25,-0.75), metadata=df, event_repeated="drop").load_data()
         frontal_n = len(epo["Ort=='frontal'"])
         central_n = len(epo["Ort=='central'"])
         posterior_n = len(epo["Ort=='posterior'"])
