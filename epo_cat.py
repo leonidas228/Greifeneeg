@@ -39,7 +39,7 @@ for filename in filelist:
         for ort in chans:
             for osc in ["SO","deltO"]:
                 for pp in ["Pre","Post"]:
-                    for ind in range(max_ind):
+                    for ind in range(max_ind+1):
                         if cond != "sham":
                             df_dict["Stim"].append("Stim")
                         else:

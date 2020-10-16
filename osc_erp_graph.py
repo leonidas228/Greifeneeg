@@ -44,6 +44,29 @@ axes[1].set_title("deltO")
 axes[2].set_title("SO-deltO")
 fig.suptitle("TFR, Z-scores from baseline")
 
+tfr_sham = this_tfr["Cond=='sham' and OscType=='SO'"].average()
+tfr_eig30s = this_tfr["Cond=='eig30s' and OscType=='SO'"].average()
+tfr_fix30s = this_tfr["Cond=='fix30s' and OscType=='SO'"].average()
+
+
+fig, axes = plt.subplots(1,3)
+tfr_fix30s.plot(vmin=vmin, vmax=vmax, axes=axes[0])
+axes[0].set_title("fix30s")
+tfr_sham.plot(vmin=vmin, vmax=vmax, axes=axes[1])
+axes[1].set_title("sham")
+(tfr_fix30s-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
+axes[2].set_title("fix30s-sham")
+fig.suptitle("TFR SO, Z-scores from baseline")
+
+fig, axes = plt.subplots(1,3)
+tfr_eig30s.plot(vmin=vmin, vmax=vmax, axes=axes[0])
+axes[0].set_title("eig30s")
+tfr_sham.plot(vmin=vmin, vmax=vmax, axes=axes[1])
+axes[1].set_title("sham")
+(tfr_eig30s-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
+axes[2].set_title("eig30s-sham")
+fig.suptitle("TFR SO, Z-scores from baseline")
+
 # add tfr in freq band of interest as channel
 freq_inds = (list(tfr.freqs).index(freq_win[0]), list(tfr.freqs).index(freq_win[1]))
 time_inds = (list(tfr.times).index(time_win[0]), list(tfr.times).index(time_win[1]))
@@ -53,7 +76,7 @@ tfr_epo = mne.EpochsArray(tfr_chan, mne.create_info(["TFR"],tfr.info["sfreq"],
                           ch_types="misc"))
 epo = epo.add_channels([tfr_epo], force_update_info=True)
 
-#e = epo.copy().filter(l_freq=0.3,h_freq=3,n_jobs=4)
+e = epo.copy().filter(l_freq=0.3,h_freq=3,n_jobs=4)
 e = epo["Cond=='{}' or Cond=='{}' or Cond=='sham'".format(conds[0],conds[1])]
 
 # # erp images

@@ -25,17 +25,14 @@ df = pd.read_pickle("{}grand_df.pickle".format(proc_dir))
 df = df.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
 
 this_df = df.query("OscType=='SO'")
-sns.catplot(hue="PrePost", y="Number", x="Cond", data=this_df, kind="violin",
-            split=True)
+sns.catplot(hue="PrePost", y="Number", x="Cond", data=this_df, kind="box")
 plt.title("Number of slow oscillations")
 
-
 this_df = df.query("OscType=='deltO'")
-sns.catplot(hue="PrePost", y="Number", x="Cond", data=this_df, kind="violin",
-            split=True)
+sns.catplot(hue="PrePost", y="Number", x="Cond", data=this_df, kind="box")
 plt.title("Number of delta oscillations")
 
-md = smf.mixedlm("Number ~ C(Cond, Treatment('sham'))*OscType", df,
+md = smf.mixedlm("Number ~ Index*C(Cond, Treatment('sham'))*OscType", df,
                  groups=df["Subj"])
-res_all = md.fit()
+res_all = md.fit(reml=False)
 print(res_all.summary())
