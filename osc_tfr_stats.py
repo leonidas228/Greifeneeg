@@ -29,8 +29,8 @@ data = tfr.data
 erp = data[:,0,:,time_inds[0]:time_inds[1]].mean(axis=2)
 erp = erp[:,freq_inds[0]:freq_inds[1]].mean(axis=1)
 df["Brain"] = pd.Series(erp,index=df.index)
-df = df[sub_inds]
-#df = df.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
+#df = df[sub_inds]
+df = df.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
 #df = df.query("Cond=='fix30s' or Cond=='sham'")
 
 if sham:
@@ -38,19 +38,19 @@ if sham:
     this_df = df.copy()
     #md = smf.mixedlm("Brain ~ C(OscType, Treatment('deltO'))", this_df, groups=this_df["Subj"])
     #md = smf.mixedlm("Brain ~ C(PrePost, Treatment('Pre'))*C(OscType, Treatment('deltO'))*Index*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
-    md = smf.mixedlm("Brain ~ Index*C(OscType, Treatment('deltO'))*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
+    md = smf.mixedlm("Brain ~ Index*C(OscType, Treatment('deltO'))*C(Stim, Treatment('sham'))", this_df, groups=this_df["Subj"])
     res_all = md.fit(reml=False)
     print(res_all.summary())
 
     # SO only
     this_df = df.query("OscType=='SO'")
-    md = smf.mixedlm("Brain ~ Index*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
+    md = smf.mixedlm("Brain ~ Index*C(Stim, Treatment('sham'))", this_df, groups=this_df["Subj"])
     res_SO = md.fit(reml=True)
     print(res_SO.summary())
 
     # deltO only
     this_df = df.query("OscType=='deltO'")
-    md = smf.mixedlm("Brain ~ Index*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
+    md = smf.mixedlm("Brain ~ Index*C(Stim, Treatment('sham'))", this_df, groups=this_df["Subj"])
     res_deltO = md.fit(reml=True)
     print(res_deltO.summary())
 else:

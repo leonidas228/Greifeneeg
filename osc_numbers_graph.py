@@ -22,7 +22,7 @@ proc_dir = root_dir+"proc/"
 df = pd.read_pickle("{}grand_df.pickle".format(proc_dir))
 # sub_inds = df["Subj"].values.astype(int) >= 31
 # df = df[sub_inds]
-df = df.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
+df = df.query("(Cond=='eig30s' or Cond=='fix30s' or Cond=='sham') and Ort=='frontal'")
 
 this_df = df.query("OscType=='SO'")
 sns.catplot(hue="PrePost", y="Number", x="Cond", data=this_df, kind="box")

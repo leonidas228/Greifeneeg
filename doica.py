@@ -9,7 +9,6 @@ if isdir("/home/jev"):
 elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
-proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 conds = ["sham"]
 filelist = listdir(proc_dir)

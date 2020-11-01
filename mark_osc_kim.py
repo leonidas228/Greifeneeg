@@ -227,8 +227,8 @@ for filename in filelist:
             else:
                 df_dict["PrePost"].append("Pre")
             df_dict["Index"].append(int(eve))
-            df_dict["Subj"] = subj
-            df_dict["Cond"] = cond
+            df_dict["Subj"].append(subj)
+            df_dict["Cond"].append(cond)
             if cond != "sham":
                 df_dict["Stim"].append("stim")
             else:

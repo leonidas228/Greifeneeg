@@ -19,18 +19,20 @@ proc_dir = root_dir+"proc/"
 
 oscs = ["SO", "deltO"]
 conds = ["eig30s", "fix30s"]
-pick = "TFR"
+pick = "central"
 time_win = (0.25, 0.4)
 freq_win = (14, 16)
 ylim = {"misc":(-10,10)}
+chan = "frontal"
 
-epo = mne.read_epochs("{}grand-epo.fif".format(proc_dir), preload=True)
+
+epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
 df = epo.metadata
 sub_inds = df["Subj"].values.astype(int) >= 31
-tfr = read_tfrs("{}grand-tfr.h5".format(proc_dir))[0]
+tfr = read_tfrs("{}grand_{}-tfr.h5".format(proc_dir, chan))[0]
 
 # plot tfrs
-evo_SO = epo["(Cond=='fix30s' or Cond=='eig30s') and OscType=='SO'"].average()
+evo_SO = epo["Cond=='{}' or Cond=='{}' or Cond=='sham'".format(conds[0],conds[1])].average()
 evo_data = evo_SO.data
 evo_data = (evo_data - evo_data.min()) / (evo_data.max() - evo_data.min())
 evo_data = evo_data*3 + 12
@@ -95,17 +97,17 @@ epo = epo.add_channels([tfr_epo], force_update_info=True)
 e = epo.copy().filter(l_freq=0.3,h_freq=3,n_jobs=4)
 e = epo["Cond=='{}' or Cond=='{}' or Cond=='sham'".format(conds[0],conds[1])]
 
-# # erp images
-# evos = []
-# for osc in oscs:
-#     this_e = e["OscType=='{}'".format(osc)]
-#     this_e.plot_image(picks=pick)
-#     plt.suptitle("30 second stimulations and Sham, {}".format(osc))
-#     evos.append(this_e.average())
-#     evos[-1].comment = osc
-# mne.viz.plot_compare_evokeds(evos,picks=pick)
+# erp images
+evos = []
+for osc in oscs:
+    this_e = e["OscType=='{}'".format(osc)]
+    this_e.plot_image(picks=pick)
+    plt.suptitle("30 second stimulations and Sham, {}".format(osc))
+    evos.append(this_e.average())
+    evos[-1].comment = osc
+mne.viz.plot_compare_evokeds(evos,picks=pick)
 
-# # erps
+# erps
 # colors, styles = [], []
 # for col in ["blue", "red", "green", "cyan", "purple"]:
 #     for sty in ["dotted", "solid"]:

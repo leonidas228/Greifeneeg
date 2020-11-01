@@ -12,15 +12,15 @@ proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 #conds = ["sham"]
 filelist = listdir(proc_dir)
-chans = ["frontal", "posterior"]
-chans = ["central"]
+chans = ["frontal", "central"]
 epo_pref = "spin_"
 epo_pref = ""
 
 for filename in filelist:
-    this_match = re.match(epo_pref+"NAP_(\d{3})_(.*)-epo.fif",filename)
+    this_match = re.match(epo_pref+"NAP_(\d{3})_(.*)_(.*)_(.*)-epo.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
+        ort, osc_type = this_match.group(3), this_match.group(4)
         if cond not in conds:
             continue
         epo = mne.read_epochs(proc_dir+filename)
@@ -29,11 +29,11 @@ for filename in filelist:
         thresh = 1e-4
         print("Threshold: {}".format(thresh))
         drop_inds = []
+        pick = picks[chans.index(ort)]
         for epo_idx in range(len(epo)):
-            ort = epo.metadata.iloc[epo_idx].Ort
-            pick = picks[chans.index(ort)]
             if np.abs(epo_data[epo_idx,pick,]).max() > thresh:
                 drop_inds.append(epo_idx)
         print(drop_inds)
         epo.drop(drop_inds)
-        epo.save("{}d_{}NAP_{}_{}-epo.fif".format(proc_dir,epo_pref,subj,cond), overwrite=True)
+        if len(epo):
+            epo.save("{}d_{}NAP_{}_{}_{}_{}-epo.fif".format(proc_dir,epo_pref,subj,cond,ort,osc_type), overwrite=True)
