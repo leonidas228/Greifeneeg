@@ -40,6 +40,8 @@ for filename in filelist:
         subj, tag = this_match.group(1), int(this_match.group(2))
         if tag < 2: # skip the first two non-stim recordings
             continue
+        # if subj != "033" or tag != 2:
+        #     continue
         ur_raw = mne.io.Raw(proc_dir+filename,preload=True)
         raw = ur_raw.copy()
         psds, freqs = psd_multitaper(raw, fmax=2, picks=picks, n_jobs=n_jobs)
@@ -53,6 +55,13 @@ for filename in filelist:
             stim_len = ""
         else:
             stim_type = "eig"
+
+        # special cases
+        if subj == "007" or subj == "051":
+            if stim_type == "eig":
+                stim_type = "fix"
+            elif stim_type == "fix":
+                stim_type = "eig"
 
         if stim_type != "sham":
             epo = mne.make_fixed_length_epochs(raw, duration=epolen)
@@ -124,6 +133,7 @@ for filename in filelist:
                     winner_annot = these_annotations.copy()
                     winner_std =  dur_std
                     winner_id = tfr_upper_thresh
+                    winner_stim_idx = stim_idx
                     winner_durations = durations.copy()
 
             # last post-stimulation period should be longer
@@ -142,7 +152,7 @@ for filename in filelist:
             stim_len = dur_dict[this_dur]
 
             with open("stim_info.csv", "at") as f:
-                for si in range(stim_idx):
+                for si in range(winner_stim_idx):
                     for annot in winner_annot:
                         if annot["description"] == "BAD_Stimulation {}".format(si):
                             break
@@ -151,8 +161,8 @@ for filename in filelist:
                     end = begin + duration
                     f.write("{}\t{}\t{}\t{}\t{}\t".format(subj, stim_type+stim_len, int(begin),
                                                           int(end), int(duration)))
-                    if si == stim_idx - 1:
-                        f.write("{}\n".format(stim_idx))
+                    if si == winner_stim_idx - 1:
+                        f.write("{}\n".format(winner_stim_idx))
                     else:
                         f.write("\n")
 
@@ -160,7 +170,7 @@ for filename in filelist:
             if stim_type == "sham":
                 f.write("{}\t{}\t{}\t\t{}\n".format(subj, tag, stim_type, ""))
             else:
-                f.write("{}\t{}\t{}\t{}\t{}\n".format(subj, tag, stim_type+stim_len, fmax, stim_idx))
+                f.write("{}\t{}\t{}\t{}\t{}\n".format(subj, tag, stim_type+stim_len, fmax, winner_stim_idx))
 
         if stim_type == "sham":
             raw.save("{}f_NAP_{}_{}{}-raw.fif".format(proc_dir,subj,stim_type,stim_len),

@@ -12,45 +12,37 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-oscs = ["SO", "deltO"]
-conds = ["eig30s", "fix30s"]
 time_win = (-0.025, 0.025)
 sham = True
 chan = "central"
 
-epo = mne.read_epochs("{}grand-epo.fif".format(proc_dir), preload=True)
-df = epo.metadata
+df_SO = pd.read_pickle("{}phase_amp_{}".format(proc_dir, "SO"))
+df_deltO = pd.read_pickle("{}phase_amp_{}".format(proc_dir, "deltO"))
+df = pd.concat([df_SO, df_deltO])
 sub_inds = df["Subj"].values.astype(int) >= 31
+df["Synchron"] = sub_inds
 
-#epo.filter(l_freq=0.3,h_freq=3,n_jobs=8)
-data = epo.get_data()
-pick = mne.pick_channels(epo.ch_names, include=[chan])[0]
-time_inds = (epo.time_as_index(time_win[0])[0],epo.time_as_index(time_win[1])[0])
-erp = data[:,pick,time_inds[0]:time_inds[1]].mean(axis=1) * 1e+6
-#erp = np.log(erp - erp.min() + 1e-8)
-df["Brain"] = pd.Series(erp,index=df.index)
-#df = df[sub_inds]
-df = df.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
-#df = df.query("Cond=='fix30s' or Cond=='sham'")
+df = df[df["Synchron"]]
+#df = df.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
 
 if sham:
-    # all oscillations
-    this_df = df.copy()
-    md = smf.mixedlm("Brain ~ C(OscType, Treatment('deltO'))*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
-    #md = smf.mixedlm("Brain ~ C(PrePost, Treatment('Pre'))*C(OscType, Treatment('deltO'))*Index*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
-    res_all = md.fit(reml=True)
-    print(res_all.summary())
+    # # all oscillations
+    # this_df = df.copy()
+    # #md = smf.mixedlm("Amp ~ C(OscType, Treatment('deltO'))*C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
+    # md = smf.mixedlm("Amp ~ C(OscType, Treatment('deltO')) * PureIndex * C(Cond, Treatment('sham'))", this_df, groups=this_df["Subj"])
+    # res_all = md.fit(reml=True)
+    # print(res_all.summary())
 
-    # # SO only
-    # this_df = df.query("OscType=='SO'")
-    # md = smf.mixedlm("Brain ~ C(PrePost, Treatment('Pre'))*Index*C(Cond, Treatment('sham'))", this_df,
-    #                  groups=this_df["Subj"])
-    # res_SO = md.fit(reml=False)
-    # print(res_SO.summary())
+    # SO only
+    this_df = df.query("OscType=='SO'")
+    md = smf.mixedlm("Amp ~ C(PrePost, Treatment('Pre'))*Index*C(Cond, Treatment('sham'))", this_df,
+                     groups=this_df["Subj"])
+    res_SO = md.fit(reml=False)
+    print(res_SO.summary())
     #
     # # deltO only
     # this_df = df.query("OscType=='deltO'")
-    # md = smf.mixedlm("Brain ~ C(PrePost, Treatment('Pre'))*Index*C(Cond, Treatment('sham'))", this_df,
+    # md = smf.mixedlm("Amp ~ C(PrePost, Treatment('Pre'))*Index*C(Cond, Treatment('sham'))", this_df,
     #                  groups=this_df["Subj"])
     # res_deltO = md.fit(reml=False)
     # print(res_deltO.summary())
@@ -73,21 +65,21 @@ else:
 
     # all oscillations
     this_df = df.copy()
-    md = smf.mixedlm("Brain ~ OscType*PrePost*Index*StimArt*StimLen", this_df,
+    md = smf.mixedlm("Amp ~ OscType*PrePost*Index*StimArt*StimLen", this_df,
                      groups=this_df["Subj"])
     res_all = md.fit()
     print(res_all.summary())
 
     # SO only
     this_df = df.query("OscType=='SO'")
-    md = smf.mixedlm("Brain ~ PrePost*Index*StimArt*StimLen", this_df,
+    md = smf.mixedlm("Amp ~ PrePost*Index*StimArt*StimLen", this_df,
                      groups=this_df["Subj"])
     res_SO = md.fit()
     print(res_SO.summary())
 
     # deltO only
     this_df = df.query("OscType=='deltO'")
-    md = smf.mixedlm("Brain ~ PrePost*Index*StimArt*StimLen", this_df,
+    md = smf.mixedlm("Amp ~ PrePost*Index*StimArt*StimLen", this_df,
                      groups=this_df["Subj"])
     res_deltO = md.fit()
     print(res_deltO.summary())

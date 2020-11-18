@@ -17,7 +17,7 @@ proclist = listdir(proc_dir) # and in proc directory
 overwrite = False # skip
 
 for filename in filelist: # cycle through all files in raw directory
-    this_match = re.search("NAP_(\d{3})_T(\d)(b?).vhdr", filename)
+    this_match = re.search("NAP_(\d{3})_T(\d)(b|c?).vhdr", filename)
     # do something if the file fits the raw file pattern
     if this_match:
         # pull subject and tag out of the filename and assign to variables
@@ -26,5 +26,9 @@ for filename in filelist: # cycle through all files in raw directory
             print("Already exists. Skipping.")
             continue
         raw = mne.io.read_raw_brainvision(raw_dir+filename) # convert
+        if "NAP_{}_T{}_2.vhdr".format(subj, tag) in filelist:
+            print("Caught a _2 version.")
+            raw_2 = mne.io.read_raw_brainvision(raw_dir+"NAP_{}_T{}_2.vhdr".format(subj, tag))
+            raw.append([raw_2])
         raw.save("{}NAP_{}_T{}-raw.fif".format(proc_dir, subj, tag),
                  overwrite=overwrite) # save

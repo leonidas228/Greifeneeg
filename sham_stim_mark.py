@@ -3,6 +3,7 @@ from os import listdir
 import re
 import numpy as np
 from os.path import isdir
+import pandas as pd
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
@@ -17,6 +18,9 @@ start_times = {"002":360, "003":5640, "005":930, "006":1780, "007":540, "009":11
                "025":675, "026":2400, "028":729, "031":615, "033":1020, "035":1209,
                "021":627, "038":250, "037":618, "043":858, "044":1702, "017":840,
                "045":480, "046":1950, "050":1800, "048":2658, "047":798}
+
+df = pd.read_pickle("{}start_times.pickle".format(proc_dir))
+
 stim_time = 150
 analy_time = 30
 jitter = (240, 360)
@@ -28,10 +32,13 @@ for filename in filelist:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds:
             continue
-        if subj not in start_times.keys():
-            continue
+        start_vals = df.query("Subj=='{}'".format(subj))["Start"].values
+        med = np.percentile(start_vals, 0.5)
+        start_vals = start_vals[(med-180 < start_vals) & (start_vals < med+180)]
+        this_start_time = start_vals.mean()
+        if not len(start_vals):
+            raise ValueError("No median could be found.")
         raw = mne.io.Raw(proc_dir+filename,preload=True)
-        this_start_time = start_times[subj]
         for stim_idx in range(stim_nums):
             raw.annotations.append(this_start_time-analy_time, analy_time,
                                    "Pre_Stimulation {}".format(stim_idx))

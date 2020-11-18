@@ -13,6 +13,7 @@ conds = ["sham"]
 filelist = listdir(proc_dir)
 excludes = ["031_eig30s", "045_fix5m", "046_eig30s"]
 excludes = []
+overwrite = True
 
 for filename in filelist:
     this_match = re.match("af_NAP_(\d{3})_(.*)-raw.fif",filename)
@@ -20,8 +21,9 @@ for filename in filelist:
         subj, cond = this_match.group(1), this_match.group(2)
         if cond not in conds or "{}_{}".format(subj,cond) in excludes:
             continue
-        # if "csaf_NAP_{}_{}-raw.fif".format(subj,cond) in filelist:
-        #     continue
+        if "caf_NAP_{}_{}-raw.fif".format(subj,cond) in filelist and not overwrite:
+            print("Already exists. Skipping.")
+            continue
         raw = mne.io.Raw(proc_dir+filename,preload=True)
         raws = []
         for annot in raw.annotations:
@@ -40,4 +42,4 @@ for filename in filelist:
         raw_cut = raws[0]
         raw_cut.append(raws[1:])
         raw_cut.save("{}caf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
-                     overwrite=True)
+                     overwrite=overwrite)

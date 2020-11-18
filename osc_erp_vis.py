@@ -19,20 +19,20 @@ proc_dir = root_dir+"proc/"
 
 oscs = ["SO", "deltO"]
 conds = ["eig30s", "fix30s"]
-pick = "central"
 time_win = (0.25, 0.4)
-freq_win = (14, 16)
+freq_win = (12, 17)
 ylim = {"misc":(-10,10)}
-chan = "frontal"
-
+chan = "central"
 
 epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
+epo.apply_baseline((-1.5,-1.25))
 df = epo.metadata
 sub_inds = df["Subj"].values.astype(int) >= 31
 tfr = read_tfrs("{}grand_{}-tfr.h5".format(proc_dir, chan))[0]
+epo.crop(tmin=tfr.times[0], tmax=tfr.times[-1])
 
 # plot tfrs
-evo_SO = epo["Cond=='{}' or Cond=='{}' or Cond=='sham'".format(conds[0],conds[1])].average()
+evo_SO = epo["Cond=='{}' or Cond=='{}' or Cond=='sham' and OscType=='SO'".format(conds[0],conds[1])].average()
 evo_data = evo_SO.data
 evo_data = (evo_data - evo_data.min()) / (evo_data.max() - evo_data.min())
 evo_data = evo_data*3 + 12
@@ -51,37 +51,37 @@ axes[2].set_title("SO-deltO")
 fig.suptitle("TFR, Z-scores from baseline")
 
 tfr_sham = this_tfr["Cond=='sham' and OscType=='SO'"].average()
-tfr_eig30s = this_tfr["Cond=='eig30s' and OscType=='SO'"].average()
-tfr_fix30s = this_tfr["Cond=='fix30s' and OscType=='SO'"].average()
-tfr_30s = this_tfr["(Cond=='fix30s' or Cond=='eig30s') and OscType=='SO'"].average()
+tfr_cond0 = this_tfr["Cond=='{}' and OscType=='SO'".format(conds[0])].average()
+tfr_cond1 = this_tfr["Cond=='{}' and OscType=='SO'".format(conds[1])].average()
+tfr_both = this_tfr["(Cond=='{}' or Cond=='{}') and OscType=='SO'".format(conds[0],conds[1])].average()
 
 fig, axes = plt.subplots(1,3)
-tfr_fix30s.plot(vmin=vmin, vmax=vmax, axes=axes[0])
-axes[0].set_title("fix30s")
+tfr_cond0.plot(vmin=vmin, vmax=vmax, axes=axes[0])
+axes[0].set_title(conds[0])
 tfr_sham.plot(vmin=vmin, vmax=vmax, axes=axes[1])
 axes[1].set_title("sham")
-(tfr_fix30s-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
-axes[2].set_title("fix30s-sham")
+(tfr_cond0-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
+axes[2].set_title("{}-sham".format(conds[0]))
 fig.suptitle("TFR SO, Z-scores from baseline")
 
 fig, axes = plt.subplots(1,3)
-tfr_eig30s.plot(vmin=vmin, vmax=vmax, axes=axes[0])
-axes[0].set_title("eig30s")
+tfr_cond1.plot(vmin=vmin, vmax=vmax, axes=axes[0])
+axes[0].set_title(conds[1])
 tfr_sham.plot(vmin=vmin, vmax=vmax, axes=axes[1])
 axes[1].set_title("sham")
-(tfr_eig30s-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
-axes[2].set_title("eig30s-sham")
+(tfr_cond1-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
+axes[2].set_title("{}-sham".format(conds[1]))
 fig.suptitle("TFR SO, Z-scores from baseline")
 
 fig, axes = plt.subplots(1,3)
-tfr_30s.plot(vmin=vmin, vmax=vmax, axes=axes[0], colorbar=False)
-axes[0].set_title("30s stimulation")
+tfr_both.plot(vmin=vmin, vmax=vmax, axes=axes[0], colorbar=False)
+axes[0].set_title("Average {} and {} stimulation".format(conds[0], conds[1]))
 axes[0].plot(tfr.times, evo_data[0,], color="gray", alpha=0.5, linewidth=10)
 tfr_sham.plot(vmin=vmin, vmax=vmax, axes=axes[1], colorbar=False)
 axes[1].set_title("sham")
 axes[1].plot(tfr.times, evo_data[0,], color="gray", alpha=0.5, linewidth=10)
-(tfr_30s-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
-axes[2].set_title("30s-sham")
+(tfr_both-tfr_sham).plot(vmin=vmin, vmax=vmax, axes=axes[2])
+axes[2].set_title("Average {} and {} - sham".format(conds[0], conds[1]))
 axes[2].plot(tfr.times, evo_data[0,], color="gray", alpha=0.5, linewidth=10)
 fig.suptitle("TFR SO, Z-scores from baseline")
 
@@ -94,20 +94,20 @@ tfr_epo = mne.EpochsArray(tfr_chan, mne.create_info(["TFR"],tfr.info["sfreq"],
                           ch_types="misc"))
 epo = epo.add_channels([tfr_epo], force_update_info=True)
 
-e = epo.copy().filter(l_freq=0.3,h_freq=3,n_jobs=4)
+e = epo.copy().filter(l_freq=0.16,h_freq=4.25,n_jobs=4)
 e = epo["Cond=='{}' or Cond=='{}' or Cond=='sham'".format(conds[0],conds[1])]
 
 # erp images
 evos = []
 for osc in oscs:
     this_e = e["OscType=='{}'".format(osc)]
-    this_e.plot_image(picks=pick)
-    plt.suptitle("30 second stimulations and Sham, {}".format(osc))
+    this_e.plot_image(picks=chan)
+    plt.suptitle("{}, {} and sham: {}".format(conds[0], conds[1], osc))
     evos.append(this_e.average())
     evos[-1].comment = osc
-mne.viz.plot_compare_evokeds(evos,picks=pick)
+mne.viz.plot_compare_evokeds(evos, picks=chan)
 
-# erps
+# # erps
 # colors, styles = [], []
 # for col in ["blue", "red", "green", "cyan", "purple"]:
 #     for sty in ["dotted", "solid"]:
@@ -115,36 +115,35 @@ mne.viz.plot_compare_evokeds(evos,picks=pick)
 #         styles.append(sty)
 # for osc in ["SO"]:
 #     epo0 = e["OscType=='{}'".format(osc)]
-#     for ort in ["central"]:
-#         epo1 = epo0["Ort=='{}'".format(ort)]
+#     for ort in [chan]:
 #         for cond in ["eig", "fix"]:
-#             for timelen in ["30s"]:
-#                 epo2 = epo1["Cond=='{}{}'".format(cond,timelen)]
+#             for timelen in ["2m"]:
+#                 epo1 = epo0["Cond=='{}{}'".format(cond,timelen)]
 #                 evo_inds = []
 #                 for ind in range(5):
-#                     epo3 = epo2["Index=='{}'".format(ind)]
+#                     epo2 = epo1["Index=='{}'".format(ind)]
 #                     for pp in ["Pre", "Post"]:
-#                         epo4 = epo3["PrePost=='{}'".format(pp)]
-#                         evo = epo4.average(picks=pick)
+#                         epo3 = epo2["PrePost=='{}'".format(pp)]
+#                         evo = epo3.average(picks=chan)
 #                         evo.comment = "{} {} {}{} Stimulation {} {}".format(ort, osc, cond,
 #                                                                 timelen, ind+1, pp)
 #                         evo_inds.append(evo)
 #
-#                 mne.viz.plot_compare_evokeds(evo_inds, picks=pick,
+#                 mne.viz.plot_compare_evokeds(evo_inds, picks=chan,
 #                                              colors=colors, linestyles=styles,
 #                                              ylim=ylim)
 #                 plt.legend(loc="lower left")
 #
-#         epo2 = epo1["Cond=='sham'"]
+#         epo1 = epo0["Cond=='sham'"]
 #         evo_inds = []
 #         for ind in range(5):
-#             epo3 = epo2["Index=='{}'".format(ind)]
+#             epo2 = epo1["Index=='{}'".format(ind)]
 #             for pp in ["Pre", "Post"]:
-#                 epo4 = epo3["PrePost=='{}'".format(pp)]
-#                 evo = epo4.average(picks=pick)
+#                 epo3 = epo2["PrePost=='{}'".format(pp)]
+#                 evo = epo3.average(picks=chan)
 #                 evo.comment = "{} {} Sham Stimulation {} {}".format(ort, osc, ind+1, pp)
 #                 evo_inds.append(evo)
-#         mne.viz.plot_compare_evokeds(evo_inds, picks=pick,
+#         mne.viz.plot_compare_evokeds(evo_inds, picks=chan,
 #                                      colors=colors, linestyles=styles,
 #                                      ylim=ylim)
 #         plt.legend(loc="lower left")

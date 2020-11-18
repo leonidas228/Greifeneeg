@@ -20,7 +20,7 @@ for filename in filelist:
     this_match = re.search("NAP_(\d{3})_T(\d)-raw.fif",filename)
     if this_match:
         subj, tag = this_match.group(1), this_match.group(2)
-        if "f_NAP_{}_T{}-raw.fif".format(subj,tag) in filelist:
+        if "f_NAP_{}_T{}-raw.fif".format(subj,tag) in filelist and not overwrite:
             print("Already exists. Skipping.")
             continue
         raw = mne.io.Raw(proc_dir+filename, preload=True)
@@ -30,6 +30,6 @@ for filename in filelist:
         # special cases
         if subj == "021" and tag == "2":
             raw.crop(tmin=0,tmax=5340)
-            
+
         raw.save("{}f_NAP_{}_T{}-raw.fif".format(proc_dir,subj,tag),
-                 overwrite=True)
+                 overwrite=overwrite)

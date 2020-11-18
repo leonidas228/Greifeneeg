@@ -13,7 +13,7 @@ proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 #conds = ["eig30s","fix30s"]
 filelist = listdir(proc_dir)
-chans = ["frontal", "central"]
+chans = ["central"]
 osc_types = ["SO", "deltO"]
 
 df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[],

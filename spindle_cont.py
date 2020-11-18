@@ -11,9 +11,9 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-n_jobs = 4
+n_jobs = 8
 spindle_freq = np.arange(10,20)
-chans = ["frontal", "central"]
+chans = ["central"]
 osc_types = ["SO", "deltO"]
 
 for chan in chans:
@@ -21,5 +21,7 @@ for chan in chans:
                           preload=True)
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs)
-    power.apply_baseline((-1.5,-1.),mode="zscore")
+    power.crop(tmin=-1.35,tmax=1.25)
+    power.apply_baseline((-1.35,-1))
+    power.crop(tmin=-1,tmax=1)
     power.save("{}grand_{}-tfr.h5".format(proc_dir, chan), overwrite=True)

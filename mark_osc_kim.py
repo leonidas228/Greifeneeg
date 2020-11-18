@@ -112,6 +112,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
+#conds = ["sham"]
 filelist = listdir(proc_dir)
 chan_groups = {"central":["Fz","FC1","FC2","Cz","CP1","CP2","Pz"]}
 peak_percentile = 80
@@ -176,6 +177,7 @@ for filename in filelist:
                 osc_events.append(OscEvent(time0, time1, peak_time,
                                            peak_amp, trough_time, trough_amp))
             # get percentiles of peaks and troughs
+            osc_events = [oe for oe in osc_events if (oe.end_time-oe.start_time)>minmax_time[0] and (oe.end_time-oe.start_time)<minmax_time[1]]
             peaks, troughs = osc_peaktroughs(osc_events)
             amps = peaks - troughs
             amp_thresh = np.percentile(amps, amp_percentile)

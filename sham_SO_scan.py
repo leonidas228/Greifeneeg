@@ -1,12 +1,13 @@
+import pandas as pd
 import mne
+import matplotlib.pyplot as plt
+plt.ion()
 from os import listdir
+from os.path import isdir
+from anoar import BadChannelFind
 import re
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 from scipy.signal import find_peaks
-from os.path import isdir
-plt.ion()
 
 class OscEvent():
     def __init__(self, start_time, end_time, peak_time, peak_amp, trough_time,
@@ -50,24 +51,27 @@ def osc_peaktroughs(osc_events):
     peaks, troughs = np.array(peaks), np.array(troughs)
     return peaks, troughs
 
-def mark_osc_amp(osc_events, amp_thresh, chan_name, minmax_times, osc_type,
-                 raw_inst=None):
+def mark_osc_amp(osc_events, amp_thresh, chan_name, minmax_times, osc_type):
     osc_idx = 0
     for oe in osc_events:
-        if raw_inst is not None:
-            event_annot = get_annotation(raw_inst.annotations,
-                                         oe.start_time)
-            if event_annot is None:
-                continue
-        else:
-            event_annot = None
         pt_time_diff = oe.trough_time - oe.peak_time
         time_diff = oe.end_time - oe.start_time
         pt_amp_diff = oe.peak_amp - oe.trough_amp
         if pt_amp_diff > amp_thresh and minmax_time[0] < time_diff < minmax_time[1]:
             oe.event_id = "{} {} {}".format(chan_name, osc_type, osc_idx)
-            oe.event_annot = event_annot
             osc_idx += 1
+
+def find_densest(annots, winlen, incr=10):
+    max_count = 0
+    start_stim = 0
+    onsets = np.array([annot["onset"] for annot in new_annots])
+    for start_time in range(0, int(onsets[-1]), incr):
+        count = len(np.where((onsets > start_time) & (onsets < start_time+winlen))[0])
+        if count > max_count:
+            start_stim = start_time
+            max_count = count
+    print()
+    return start_stim
 
 
 if isdir("/home/jev"):
@@ -75,30 +79,33 @@ if isdir("/home/jev"):
 elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
-conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
-#conds = ["sham"]
+
+df = pd.read_pickle("{}amp_thresh.pickle".format(proc_dir))
 filelist = listdir(proc_dir)
-# chan_groups = {"frontal":["Fz","FC1","FC2"],
-#                "central":["Cz","CP1","CP2"]}
-chan_groups = {"central":["Fz","FC1","FC2", "Cz","CP1","CP2"]}
-amp_percentile = 75
+chan_groups = {"frontal":["Fz","FC1","FC2"],
+               "central":["Cz","CP1","CP2"]}
 min_samples = 30
 minmax_freqs = [(0.16, 1.25), (0.75, 4.25)]
 minmax_times = [(1, 2), (0.25, 1)]
 osc_types = ["SO", "deltO"]
-includes = []
-amp_thresh_dict = {"Subj":[], "Cond":[], "OscType":[], "Chan":[], "Thresh":[]}
+start_dict = {"Subj":[],"OscType":[],"Chan":[],"Start":[]}
+overwrite = False
 
 for filename in filelist:
-    this_match = re.match("ibscaf_NAP_(\d{3})_(.*)-raw.fif",filename)
+    this_match = re.match("f_NAP_(\d{3})_(.*)-raw.fif",filename)
     if this_match:
         subj, cond = this_match.group(1), this_match.group(2)
-        if cond not in conds:
+        if cond != "sham":
             continue
-        if len(includes) and "{}_{}".format(subj,cond) not in includes:
+        if "caf_NAP_{}_{}-raw.fif".format(subj,cond) in filelist and not overwrite:
+            print("Already exists. Skipping.")
             continue
         raw = mne.io.Raw(proc_dir+filename,preload=True)
-        # produce channel-ROI averages
+        picks = mne.pick_types(raw.info, eeg=True)
+        bcf = BadChannelFind(picks, thresh=0.5)
+        bad_chans = bcf.recommend(raw)
+        print(bad_chans)
+        raw.info["bads"].extend(bad_chans)
         for k,v in chan_groups.items():
             raw_pick = raw.copy().pick_channels(v)
             avg_signal = raw_pick.get_data().mean(axis=0, keepdims=True)
@@ -109,7 +116,7 @@ for filename in filelist:
                                                       minmax_times,
                                                       osc_types):
             raw_work = raw.copy()
-            raw_work.filter(l_freq=minmax_freq[0], h_freq=minmax_freq[1])
+            raw_work.filter(l_freq=minmax_freq[0], h_freq=minmax_freq[1], n_jobs=8)
             first_time = raw_work.first_samp / raw_work.info["sfreq"]
 
             # zero crossings
@@ -144,18 +151,11 @@ for filename in filelist:
                     osc_events.append(OscEvent(time0, time1, peak_time,
                                                peak_amp, trough_time, trough_amp))
                 # get percentiles of peaks and troughs
-                osc_events = [oe for oe in osc_events if (oe.end_time-oe.start_time)>minmax_time[0] and (oe.end_time-oe.start_time)<minmax_time[1]]
                 peaks, troughs = osc_peaktroughs(osc_events)
                 amps = peaks - troughs
-                amp_thresh = np.percentile(amps, amp_percentile)
-                amp_thresh_dict["Subj"].append(subj)
-                amp_thresh_dict["Cond"].append(cond)
-                amp_thresh_dict["OscType"].append(osc_type)
-                amp_thresh_dict["Chan"].append(k)
-                amp_thresh_dict["Thresh"].append(amp_thresh)
-
-                mark_osc_amp(osc_events, amp_thresh, k, minmax_time, osc_type,
-                             raw_inst=raw_work)
+                this_df = df.query("Cond!='sham' and Subj=='{}' and OscType=='{}' and Chan=='{}'".format(subj, osc_type, k))
+                amp_thresh = np.mean(this_df["Thresh"].values)
+                mark_osc_amp(osc_events, amp_thresh, k, minmax_time, osc_type)
                 marked_oe = [oe for oe in osc_events if oe.event_id is not None]
                 for moe_idx, moe in enumerate(marked_oe):
                     if moe_idx == 0:
@@ -171,36 +171,14 @@ for filename in filelist:
                     new_annots.append(moe.peak_time, 0,
                                       "Peak {} {}".format(moe.event_id, moe.event_annot))
 
-                new_annots.save("{}NAP_{}_{}_{}_{}-annot.fif".format(proc_dir,subj,cond,k,osc_type))
-                raw.set_annotations(new_annots)
-                events = mne.events_from_annotations(raw, check_trough_annot)
-                df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Index":[],"Stim":[],
-                           "PureIndex":[], "OscType":[]}
-                for event in np.nditer(events[0][:,-1]):
-                    eve = event.copy()
-                    if eve >= 100:
-                        df_dict["PureIndex"].append(str(eve//100))
-                        eve = eve%100
-                    else:
-                        df_dict["PureIndex"].append(str(0))
-                    if eve >= 50:
-                        df_dict["PrePost"].append("Post")
-                        eve -= 50
-                    else:
-                        df_dict["PrePost"].append("Pre")
-                    df_dict["Index"].append(int(eve))
-                    df_dict["Subj"].append(subj)
-                    df_dict["Cond"].append(cond)
-                    if cond != "sham":
-                        df_dict["Stim"].append("stim")
-                    else:
-                        df_dict["Stim"].append("sham")
-                    df_dict["OscType"].append(osc_type)
-                df = pd.DataFrame.from_dict(df_dict)
-                epo = mne.Epochs(raw, events[0], tmin=-1.5, tmax=1.35, detrend=None,
-                                 baseline=None, metadata=df, event_repeated="drop").load_data()
-                epo.save("{}NAP_{}_{}_{}_{}-epo.fif".format(proc_dir,subj,cond,k,osc_type),
-                         overwrite=True)
 
-df = pd.DataFrame.from_dict(amp_thresh_dict)
-df.to_pickle("{}amp_thresh.pickle".format(proc_dir))
+                raw_work.set_annotations(new_annots)
+                raw.set_annotations(new_annots)
+                start_stim = find_densest(new_annots, 1800)
+                start_dict["Subj"].append(subj)
+                start_dict["OscType"].append(osc_type)
+                start_dict["Chan"].append(k)
+                start_dict["Start"].append(start_stim)
+
+df = pd.DataFrame.from_dict(start_dict)
+df.to_pickle("{}start_times.pickle".format(proc_dir))

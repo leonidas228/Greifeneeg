@@ -10,9 +10,8 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
-#conds = ["sham"]
 filelist = listdir(proc_dir)
-chans = ["frontal", "central"]
+chans = ["central"]
 epo_pref = "spin_"
 epo_pref = ""
 
@@ -26,7 +25,7 @@ for filename in filelist:
         epo = mne.read_epochs(proc_dir+filename)
         picks = mne.pick_channels(epo.ch_names,chans)
         epo_data = epo.get_data()
-        thresh = 1e-4
+        thresh = 1.5e-4
         print("Threshold: {}".format(thresh))
         drop_inds = []
         pick = picks[chans.index(ort)]
