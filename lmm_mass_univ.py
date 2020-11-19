@@ -74,7 +74,7 @@ if opt.iter == 0: # only do main result if this is the first node
 subjs = list(np.unique(groups))
 perm_maxs = []
 for perm_idx in range(perm_n):
-    print("\n\nPermutation {} of {}\n\n".format(i, perm_n))
+    print("\n\nPermutation {} of {}\n\n".format(perm_idx, perm_n))
     for subj in subjs:
         subj_inds = np.where(groups==subj)[0]
         temp_slice = data[subj_inds,]
