@@ -15,10 +15,12 @@ n_jobs = 8
 spindle_freq = np.arange(10,20)
 chans = ["central"]
 osc_types = ["SO", "deltO"]
+sfreq = 50.
 
 for chan in chans:
     epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan),
                           preload=True)
+    epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs)
     power.crop(tmin=-1.35,tmax=1.25)

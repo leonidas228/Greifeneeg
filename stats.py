@@ -23,7 +23,7 @@ sub_inds = df_SO_ph["Subj"].values.astype(int) >= 31
 df_SO_ph["Synchron"] = sub_inds
 
 #df_SO_ph = df_SO_ph[df_SO_ph["Synchron"]]
-#df_SO_ph = df_SO_ph.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
+df_SO_ph = df_SO_ph.query("Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'")
 
 md = smf.mixedlm("SecondAmp ~ C(Cond, Treatment('sham'))", df_SO_ph,
                  groups=df_SO_ph["Subj"])
