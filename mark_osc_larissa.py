@@ -197,7 +197,7 @@ for filename in filelist:
                         df_dict["Stim"].append("sham")
                     df_dict["OscType"].append(osc_type)
                 df = pd.DataFrame.from_dict(df_dict)
-                epo = mne.Epochs(raw, events[0], tmin=-1.5, tmax=1.35, detrend=None,
+                epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=None,
                                  baseline=None, metadata=df, event_repeated="drop").load_data()
                 epo.save("{}NAP_{}_{}_{}_{}-epo.fif".format(proc_dir,subj,cond,k,osc_type),
                          overwrite=True)

@@ -46,7 +46,7 @@ osc = "SO"
 conds = ["eig30s", "fix30s"]
 factor_levels = [2]
 effects = 'A'
-tfce = dict(start=0, step=0.2)
+tfce_params = dict(start=0, step=0.2)
 perm_n = opt.perm
 
 #epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
@@ -55,7 +55,7 @@ tfr = tfr["OscType=='{}'".format(osc)]
 #epo = epo["OscType=='{}'".format(osc)]
 
 tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
-data = np.swapaxes(tfr.data[:,0],1,2)*1e+10
+data = np.swapaxes(tfr.data[:,0],1,2)
 df = tfr.metadata
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
 md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df,
@@ -64,30 +64,55 @@ endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
 # main result
 if opt.iter == 0: # only do main result if this is the first node
     t_vals = mass_uv_lmm(data, endog, exog, groups)
-    main_result = {"raw_t":{k:t_vals[idx,] for idx,k in enumerate(exog_names)},
-                   "tfce_t":{k:np.reshape(_find_clusters(t_vals[idx,], tfce)[1],
-                             t_vals[idx,].shape) for idx,k in enumerate(exog_names)}}
+    main_result = {}
+    main_result["raw_t"] = {k:t_vals[idx,] for idx,k in enumerate(exog_names)}
+    main_result["tfce_pos"] = {k:None for k in exog_names}
+    main_result["tfce_neg"] = {k:None for k in exog_names}
+    for idx, k in enumerate(exog_names):
+        # positive values
+        masked_tvals = t_vals[idx,].copy()
+        masked_tvals[masked_tvals<0] = 0
+        tfce = np.reshape(_find_clusters(masked_tvals, tfce_params)[1],
+                          t_vals[idx,].shape)
+        main_result["tfce_pos"][k] = tfce
+        # negative values
+        masked_tvals = t_vals[idx,].copy()
+        masked_tvals[masked_tvals>0] = 0
+        tfce = np.reshape(_find_clusters(abs(masked_tvals), tfce_params)[1],
+                          t_vals[idx,].shape)
+        main_result["tfce_neg"][k] = tfce
     with open("{}main_result.pickle".format(proc_dir), "wb") as f:
         pickle.dump(main_result, f)
 
 # permute
 subjs = list(np.unique(groups))
-perm_maxs = []
+perm_results = []
 for perm_idx in range(perm_n):
-    print("\n\nPermutation {} of {}\n\n".format(perm_idx, perm_n))
+    print("\n\nPermutation {} of {}\n\n".format(perm_idx+1, perm_n))
+    perm_result = {}
+    perm_result["tfce_pos"] = {k:None for k in exog_names}
+    perm_result["tfce_neg"] = {k:None for k in exog_names}
     for subj in subjs:
         subj_inds = np.where(groups==subj)[0]
         temp_slice = data[subj_inds,]
         np.random.shuffle(temp_slice)
         data[subj_inds,] = temp_slice
     t_vals = mass_uv_lmm(data, endog, exog, groups)
-    maxs = []
-    for t_idx in range(len(t_vals)):
-        tfce_vals = np.reshape(_find_clusters(t_vals[t_idx,], tfce)[1],
-                               t_vals[t_idx,].shape)
-        maxs.append(tfce_vals.max())
-    perm_maxs.append(maxs)
-perm_maxs = np.array(perm_maxs)
-perm_result = {k:perm_maxs[:,idx] for idx, k in enumerate(exog_names)}
+    for idx, k in enumerate(exog_names):
+        # positive values
+        masked_tvals = t_vals[idx,].copy()
+        masked_tvals[masked_tvals<0] = 0
+        tfce = np.reshape(_find_clusters(masked_tvals, tfce_params)[1],
+                          t_vals[idx,].shape)
+        perm_result["tfce_pos"][k] = tfce
+        # negative values
+        masked_tvals = t_vals[idx,].copy()
+        masked_tvals[masked_tvals>0] = 0
+        tfce = np.reshape(_find_clusters(abs(masked_tvals), tfce_params)[1],
+                          t_vals[idx,].shape)
+        perm_result["tfce_neg"][k] = tfce
+
+    perm_results.append(perm_result)
+
 with open("{}perm_result_{}_{}.pickle".format(proc_dir, perm_n, opt.iter), "wb") as f:
-    pickle.dump(perm_result, f)
+    pickle.dump(perm_results, f)

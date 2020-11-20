@@ -16,6 +16,7 @@ spindle_freq = np.arange(10,20)
 chans = ["central"]
 osc_types = ["SO", "deltO"]
 sfreq = 50.
+thresh = 99.9
 
 for chan in chans:
     epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan),
@@ -23,7 +24,13 @@ for chan in chans:
     epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs)
-    power.crop(tmin=-1.35,tmax=1.25)
-    power.apply_baseline((-1.35,-1))
-    power.crop(tmin=-1,tmax=1)
+    power.crop(tmin=-2.15, tmax=1.65)
+    power.apply_baseline((-2.15,-1.68), mode="logratio")
+    power.crop(tmin=-1.5,tmax=1.5)
     power.save("{}grand_{}-tfr.h5".format(proc_dir, chan), overwrite=True)
+
+    vals = power.data[:,0,].mean(axis=1).flatten()
+    plt.hist(vals, bins=100)
+
+    pos_thresh = np.percentile(vals, thresh)
+    neg_thresh = np.percentile(vals, 100-thresh)
