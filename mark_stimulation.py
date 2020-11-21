@@ -20,14 +20,15 @@ tfr_thresh_range = list(np.linspace(0.001,0.008,50))
 tfr_lower_thresh = 1e-6
 pre_stim_buffer = 20
 post_stim_buffer = 20
-analy_duration = 30
-between_duration = 30
+analy_duration = 60
+between_duration = 60
 filelist = listdir(proc_dir)
 epolen = 10
 min_bad = 25
 picks = ["Fz","AFz","Fp1","Fp2","FC1","FC2","Cz"]
 dur_dict = {344:"5m", 165:"2m", 73:"30s"}
 n_jobs = 8
+post_only = True
 
 with open("stim_info.csv", "wt") as f:
     f.write("Subject\tBlock\tBegin\tEnd\tLength\tTotal\n")
@@ -114,14 +115,25 @@ for filename in filelist:
                     else:
                         pre_dur = between_duration
                         post_dur = between_duration
-                    these_annotations.append(begin, duration,
-                                             "BAD_Stimulation {}".format(stim_idx))
-                    these_annotations.append(begin - pre_dur, pre_dur,
-                                             "Pre_Stimulation {}".format(stim_idx))
-                    these_annotations.append(begin + duration, post_dur,
-                                             "Post_Stimulation {}".format(stim_idx))
-                    earliest_idx = idx
-                    stim_idx += 1
+                    if post_only:
+                        these_annotations.append(begin, duration,
+                                                 "BAD_Stimulation {}".format(stim_idx))
+                        if not stim_idx:
+                            these_annotations.append(begin - pre_dur, pre_dur,
+                                                     "Pre_Stimulation {}".format(stim_idx))
+                        these_annotations.append(begin + duration, post_dur,
+                                                 "Post_Stimulation {}".format(stim_idx))
+                        earliest_idx = idx
+                        stim_idx += 1
+                    else:
+                        these_annotations.append(begin, duration,
+                                                 "BAD_Stimulation {}".format(stim_idx))
+                        these_annotations.append(begin - pre_dur, pre_dur,
+                                                 "Pre_Stimulation {}".format(stim_idx))
+                        these_annotations.append(begin + duration, post_dur,
+                                                 "Post_Stimulation {}".format(stim_idx))
+                        earliest_idx = idx
+                        stim_idx += 1
 
                 # assess uniformity
                 durations = []

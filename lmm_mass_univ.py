@@ -28,7 +28,7 @@ def mass_uv_lmm(data, endog, exog, groups):
     return t_vals
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--perm', type=int, default=500)
+parser.add_argument('--perm', type=int, default=25)
 parser.add_argument('--iter', type=int, default=0)
 opt = parser.parse_args()
 
@@ -51,7 +51,7 @@ perm_n = opt.perm
 
 #epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
 tfr = read_tfrs("{}grand_central-tfr.h5".format(proc_dir))[0]
-tfr = tfr["OscType=='{}'".format(osc)]
+tfr = tfr["OscType=='{}' and PrePost=='Pre'".format(osc)]
 #epo = epo["OscType=='{}'".format(osc)]
 
 tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]

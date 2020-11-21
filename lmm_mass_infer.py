@@ -10,7 +10,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-perm_chunk = 50
+perm_chunk = 5
 perm_chunk_n = 20
 
 cond_keys = {"Intercept":"Intercept",

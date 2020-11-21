@@ -12,6 +12,7 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir+"proc/"
 conds = ["sham"]
 filelist = listdir(proc_dir)
+post_only = True
 
 start_times = {"002":360, "003":5640, "005":930, "006":1780, "007":540, "009":1110,
                "013":960, "016":720, "015":500, "018":1560, "022":570, "024":1290,
@@ -22,7 +23,7 @@ start_times = {"002":360, "003":5640, "005":930, "006":1780, "007":540, "009":11
 df = pd.read_pickle("{}start_times.pickle".format(proc_dir))
 
 stim_time = 150
-analy_time = 30
+analy_time = 60
 jitter = (240, 360)
 stim_nums = 5
 
@@ -40,12 +41,21 @@ for filename in filelist:
             raise ValueError("No median could be found.")
         raw = mne.io.Raw(proc_dir+filename,preload=True)
         for stim_idx in range(stim_nums):
-            raw.annotations.append(this_start_time-analy_time, analy_time,
-                                   "Pre_Stimulation {}".format(stim_idx))
-            raw.annotations.append(this_start_time, stim_time,
-                                   "BAD_Stimulation {}".format(stim_idx))
-            raw.annotations.append(this_start_time+stim_time, analy_time,
-                                   "Post_Stimulation {}".format(stim_idx))
+            if post_only:
+                if not stim_idx:
+                    raw.annotations.append(this_start_time-analy_time, analy_time,
+                                           "Pre_Stimulation {}".format(stim_idx))
+                raw.annotations.append(this_start_time, stim_time,
+                                       "BAD_Stimulation {}".format(stim_idx))
+                raw.annotations.append(this_start_time+stim_time, analy_time,
+                                       "Post_Stimulation {}".format(stim_idx))
+            else:
+                raw.annotations.append(this_start_time-analy_time, analy_time,
+                                       "Pre_Stimulation {}".format(stim_idx))
+                raw.annotations.append(this_start_time, stim_time,
+                                       "BAD_Stimulation {}".format(stim_idx))
+                raw.annotations.append(this_start_time+stim_time, analy_time,
+                                       "Post_Stimulation {}".format(stim_idx))
             this_start_time += stim_time + np.random.randint(*jitter)
 
         raw.save("{}af_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),

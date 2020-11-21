@@ -16,10 +16,11 @@ proc_dir = root_dir+"proc/" # save the processed files here
 filelist = listdir(raw_dir) # get list of all files in raw directory
 proclist = listdir(proc_dir) # and in proc directory
 overwrite = True # skip
-analy_time = 30
+analy_time = 60
 dur_key = {"30s":30, "2m":120, "5m":300}
 l_freq = 0.1
 h_freq = 200
+post_only = True
 
 for filename in filelist: # cycle through all files in raw directory
     this_match = re.search("NAP_(\d{3})_T(\d)(b|c?).*.vhdr", filename)
@@ -41,16 +42,23 @@ for filename in filelist: # cycle through all files in raw directory
                 annot_match = re.search("(\d*s|m)_Stim(\d).*", annot["description"])
                 duration = dur_key[annot_match.group(1)]
                 stim_idx = int(annot_match.group(2))
-                these_annotations.append(onset, duration,
-                                         "BAD_Stimulation {}".format(stim_idx))
-                these_annotations.append(onset - analy_time, analy_time,
-                                         "Pre_Stimulation {}".format(stim_idx))
-                these_annotations.append(onset + duration, analy_time,
-                                         "Post_Stimulation {}".format(stim_idx))
+                if post_only:
+                    these_annotations.append(onset, duration,
+                                             "BAD_Stimulation {}".format(stim_idx))
+                    if stim_idx == 1:
+                        these_annotations.append(onset - analy_time, analy_time,
+                                                 "Pre_Stimulation {}".format(stim_idx))
+                    these_annotations.append(onset + duration, analy_time,
+                                             "Post_Stimulation {}".format(stim_idx))
+                else:
+                    these_annotations.append(onset, duration,
+                                             "BAD_Stimulation {}".format(stim_idx))
+                    these_annotations.append(onset - analy_time, analy_time,
+                                             "Pre_Stimulation {}".format(stim_idx))
+                    these_annotations.append(onset + duration, analy_time,
+                                             "Post_Stimulation {}".format(stim_idx))
                 stim_count += 1
         raw.set_annotations(these_annotations)
         print("\n\nMarked {} stimulations\n\n".format(stim_count))
-        if stim_count < 5:
-            breakpoint()
         raw.save("{}af_NAP_{}_sham-raw.fif".format(proc_dir, subj, tag),
                  overwrite=overwrite) # save
