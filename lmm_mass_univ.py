@@ -48,18 +48,18 @@ factor_levels = [2]
 effects = 'A'
 tfce_params = dict(start=0, step=0.2)
 perm_n = opt.perm
+bootstrap = True
 
 #epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
 tfr = read_tfrs("{}grand_central-tfr.h5".format(proc_dir))[0]
-tfr = tfr["OscType=='{}' and PrePost=='Pre'".format(osc)]
+tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
 #epo = epo["OscType=='{}'".format(osc)]
 
 tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
 data = np.swapaxes(tfr.data[:,0],1,2)
 df = tfr.metadata
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
-md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df,
-                 groups=df["Subj"])
+md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df, groups=df["Subj"])
 endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
 # main result
 if opt.iter == 0: # only do main result if this is the first node
@@ -94,9 +94,15 @@ for perm_idx in range(perm_n):
     perm_result["tfce_neg"] = {k:None for k in exog_names}
     for subj in subjs:
         subj_inds = np.where(groups==subj)[0]
-        temp_slice = data[subj_inds,]
-        np.random.shuffle(temp_slice)
-        data[subj_inds,] = temp_slice
+        if bootstrap:
+            perm_inds = np.random.choice(subj_inds, size=len(subj_inds))
+            data[subj_inds,] = data[perm_inds]
+        else:
+            # permute
+            temp_slice = data[subj_inds,]
+            np.random.shuffle(temp_slice)
+            data[subj_inds,] = temp_slice
+
     t_vals = mass_uv_lmm(data, endog, exog, groups)
     for idx, k in enumerate(exog_names):
         # positive values
