@@ -30,6 +30,7 @@ def mass_uv_lmm(data, endog, exog, groups):
 parser = argparse.ArgumentParser()
 parser.add_argument('--perm', type=int, default=25)
 parser.add_argument('--iter', type=int, default=0)
+parser.add_argument('--model', type=str, default="cond")
 opt = parser.parse_args()
 
 if isdir("/home/jev"):
@@ -59,7 +60,12 @@ tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
 data = np.swapaxes(tfr.data[:,0],1,2)
 df = tfr.metadata
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
-md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df, groups=df["Subj"])
+if opt.model == "simple":
+    md = smf.mixedlm("Brain ~ C(Stim, Treatment('sham'))", df, groups=df["Subj"])
+elif opt.model == "cond":
+    md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df, groups=df["Subj"])
+else:
+    raise ValueError("Model not recognised.")
 endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
 # main result
 if opt.iter == 0: # only do main result if this is the first node
@@ -81,7 +87,7 @@ if opt.iter == 0: # only do main result if this is the first node
         tfce = np.reshape(_find_clusters(abs(masked_tvals), tfce_params)[1],
                           t_vals[idx,].shape)
         main_result["tfce_neg"][k] = tfce
-    with open("{}main_result.pickle".format(proc_dir), "wb") as f:
+    with open("{}main_result_{}.pickle".format(proc_dir, opt.model), "wb") as f:
         pickle.dump(main_result, f)
 
 # permute
@@ -96,7 +102,7 @@ for perm_idx in range(perm_n):
         subj_inds = np.where(groups==subj)[0]
         if bootstrap:
             perm_inds = np.random.choice(subj_inds, size=len(subj_inds))
-            data[subj_inds,] = data[perm_inds]
+            data[subj_inds,] = data[perm_inds, ]
         else:
             # permute
             temp_slice = data[subj_inds,]
@@ -120,5 +126,5 @@ for perm_idx in range(perm_n):
 
     perm_results.append(perm_result)
 
-with open("{}perm_result_{}_{}.pickle".format(proc_dir, perm_n, opt.iter), "wb") as f:
+with open("{}perm_result_{}_{}_{}.pickle".format(proc_dir, perm_n, opt.iter, opt.model), "wb") as f:
     pickle.dump(perm_results, f)

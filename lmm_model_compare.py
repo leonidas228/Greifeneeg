@@ -41,11 +41,12 @@ conds = ["eig30s", "fix30s"]
 factor_levels = [2]
 effects = 'A'
 tfce_params = dict(start=0, step=0.2)
+epo_pref = "ak_"
 
-#epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
-tfr = read_tfrs("{}grand_central-tfr.h5".format(proc_dir))[0]
+epo = mne.read_epochs("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref, chan), preload=True)
+tfr = read_tfrs("{}{}grand_{}-tfr.h5".format(proc_dir, epo_pref, chan))[0]
 tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
-#epo = epo["OscType=='{}'".format(osc)]
+epo = epo["OscType=='{}' and PrePost=='Post'".format(osc)]
 
 tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
 data = np.swapaxes(tfr.data[:,0],1,2)
@@ -54,7 +55,7 @@ df = tfr.metadata
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
 try:
-    aics = np.load("{}aics.np".format(proc_dir))
+    aics = np.load("{}{}aics.npy".format(proc_dir, epo_pref))
 except:
     aics = np.zeros((3, *data.shape[1:]))
     md = smf.mixedlm("Brain ~ 1", df, groups=df["Subj"])
@@ -66,7 +67,7 @@ except:
     md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df, groups=df["Subj"])
     endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
     aics[2] = mass_uv_lmm(data, endog, exog, groups)
-    np.save("{}aics.np".format(proc_dir),aics)
+    np.save("{}aics.npy".format(proc_dir),aics)
 
 mins = np.argmin(aics,axis=0).astype(np.float)
 plt.figure()

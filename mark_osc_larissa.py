@@ -50,7 +50,7 @@ def osc_peaktroughs(osc_events):
     peaks, troughs = np.array(peaks), np.array(troughs)
     return peaks, troughs
 
-def mark_osc_amp(osc_events, amp_thresh, chan_name, minmax_times, osc_type,
+def mark_osc_amp(osc_events, amp_thresh, chan_name, mm_times, osc_type,
                  raw_inst=None):
     osc_idx = 0
     for oe in osc_events:
@@ -64,7 +64,7 @@ def mark_osc_amp(osc_events, amp_thresh, chan_name, minmax_times, osc_type,
         pt_time_diff = oe.trough_time - oe.peak_time
         time_diff = oe.end_time - oe.start_time
         pt_amp_diff = oe.peak_amp - oe.trough_amp
-        if pt_amp_diff > amp_thresh and minmax_time[0] < time_diff < minmax_time[1]:
+        if pt_amp_diff > amp_thresh and mm_times[0] < time_diff < mm_times[1]:
             oe.event_id = "{} {} {}".format(chan_name, osc_type, osc_idx)
             oe.event_annot = event_annot
             osc_idx += 1

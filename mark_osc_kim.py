@@ -177,7 +177,6 @@ for filename in filelist:
                 osc_events.append(OscEvent(time0, time1, peak_time,
                                            peak_amp, trough_time, trough_amp))
             # get percentiles of peaks and troughs
-            osc_events = [oe for oe in osc_events if (oe.end_time-oe.start_time)>minmax_time[0] and (oe.end_time-oe.start_time)<minmax_time[1]]
             peaks, troughs = osc_peaktroughs(osc_events)
             amps = peaks - troughs
             amp_thresh = np.percentile(amps, amp_percentile)
@@ -206,7 +205,7 @@ for filename in filelist:
         for annot in pick_annots[1:]:
             all_annots += annot
         raw.set_annotations(all_annots)
-        raw.save("{}aibscaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
+        raw.save("{}ak_ibscaf_NAP_{}_{}-raw.fif".format(proc_dir,subj,cond),
                  overwrite=True)
         events = mne.events_from_annotations(raw, check_trough_annot)
         df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Ort":[],"OscType":[],
@@ -236,10 +235,13 @@ for filename in filelist:
             else:
                 df_dict["Stim"].append("sham")
         df = pd.DataFrame.from_dict(df_dict)
-        epo = mne.Epochs(raw, events[0], tmin=-1.25, tmax=1.25, detrend=None,
-                         baseline=(-1.25,-0.75), metadata=df, event_repeated="drop").load_data()
+        epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=None,
+                         baseline=None, metadata=df, event_repeated="drop").load_data()
         frontal_n = len(epo["Ort=='frontal'"])
         central_n = len(epo["Ort=='central'"])
         posterior_n = len(epo["Ort=='posterior'"])
         print("\n\nfrontal: {} posterior: {} central {}\n\n".format(frontal_n, posterior_n, central_n))
-        epo.save("{}NAP_{}_{}-epo.fif".format(proc_dir,subj,cond), overwrite=True)
+        e = epo["OscType=='SO'"]
+        e.save("{}ak_NAP_{}_{}_{}_SO-epo.fif".format(proc_dir,subj,cond,k), overwrite=True)
+        e = epo["OscType=='deltO'"]
+        e.save("{}ak_NAP_{}_{}_{}_deltO-epo.fif".format(proc_dir,subj,cond,k), overwrite=True)

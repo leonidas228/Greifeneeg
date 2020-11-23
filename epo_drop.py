@@ -13,6 +13,7 @@ conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 filelist = listdir(proc_dir)
 chans = ["central"]
 epo_pref = "spin_"
+epo_pref = "ak_"
 epo_pref = ""
 
 for filename in filelist:

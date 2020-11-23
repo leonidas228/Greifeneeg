@@ -17,9 +17,11 @@ chans = ["central"]
 osc_types = ["SO", "deltO"]
 sfreq = 50.
 thresh = 99.9
+epo_pref = "ak_"
+epo_pref = ""
 
 for chan in chans:
-    epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan),
+    epo = mne.read_epochs("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref,chan),
                           preload=True)
     epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
@@ -27,7 +29,7 @@ for chan in chans:
     power.crop(tmin=-2.15, tmax=1.65)
     power.apply_baseline((-2.15,-1.68), mode="logratio")
     power.crop(tmin=-1.5,tmax=1.5)
-    power.save("{}grand_{}-tfr.h5".format(proc_dir, chan), overwrite=True)
+    power.save("{}{}grand_{}-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
 
     vals = power.data[:,0,].mean(axis=1).flatten()
     plt.hist(vals, bins=100)

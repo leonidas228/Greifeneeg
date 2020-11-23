@@ -15,6 +15,8 @@ conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
 filelist = listdir(proc_dir)
 chans = ["central"]
 osc_types = ["SO", "deltO"]
+epo_pref = "ak_"
+epo_pref = ""
 
 df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[],
            "Index":[], "Stim":[]}
@@ -22,7 +24,7 @@ for chan in chans:
     epos = []
     for ot in osc_types:
         for filename in filelist:
-            this_match = re.match("d_NAP_(\d{3})_(.*)_(.*)_(.*)-epo.fif", filename)
+            this_match = re.match("d_"+epo_pref+"NAP_(\d{3})_(.*)_(.*)_(.*)-epo.fif", filename)
             if this_match:
                 print(filename)
                 subj, cond = this_match.group(1), this_match.group(2)
@@ -52,6 +54,6 @@ for chan in chans:
                         df_dict["Index"].append(ind)
                         df_dict["Number"].append(len(epo["PrePost=='{}' and Index=='{}'".format(pp,ind)]))
     grand_epo = mne.concatenate_epochs(epos)
-    grand_epo.save("{}grand_{}-epo.fif".format(proc_dir, chan), overwrite=True)
+    grand_epo.save("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref, chan), overwrite=True)
 df = pd.DataFrame.from_dict(df_dict)
-df.to_pickle("{}grand_df.pickle".format(proc_dir))
+df.to_pickle("{}{}grand_df.pickle".format(proc_dir, epo_pref))
