@@ -76,12 +76,12 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham"]
-#conds = ["sham"]
+#conds = ["sham", "fix30s", "eig30s"]
 filelist = listdir(proc_dir)
 # chan_groups = {"frontal":["Fz","FC1","FC2"],
 #                "central":["Cz","CP1","CP2"]}
 chan_groups = {"central":["Fz","FC1","FC2", "Cz","CP1","CP2"]}
-amp_percentile = 75
+amp_percentile = 65
 min_samples = 30
 minmax_freqs = [(0.16, 1.25), (0.75, 4.25)]
 minmax_times = [(1, 2), (0.25, 1)]

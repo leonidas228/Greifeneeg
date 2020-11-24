@@ -28,7 +28,7 @@ def mass_uv_lmm(data, endog, exog, groups):
     return t_vals
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--perm', type=int, default=25)
+parser.add_argument('--perm', type=int, default=64)
 parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--model', type=str, default="cond")
 opt = parser.parse_args()
@@ -44,7 +44,6 @@ proc_dir = root_dir+"proc/"
 n_jobs = 8
 chan = "central"
 osc = "SO"
-conds = ["eig30s", "fix30s"]
 factor_levels = [2]
 effects = 'A'
 tfce_params = dict(start=0, step=0.2)
@@ -56,16 +55,34 @@ tfr = read_tfrs("{}grand_central-tfr.h5".format(proc_dir))[0]
 tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
 #epo = epo["OscType=='{}'".format(osc)]
 
-tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
-data = np.swapaxes(tfr.data[:,0],1,2)
-df = tfr.metadata
-df["Brain"] = np.zeros(len(df),dtype=np.float64)
 if opt.model == "simple":
-    md = smf.mixedlm("Brain ~ C(Stim, Treatment('sham'))", df, groups=df["Subj"])
+    col = "Stim"
 elif opt.model == "cond":
-    md = smf.mixedlm("Brain ~ C(Cond, Treatment('sham'))", df, groups=df["Subj"])
+    col = "Cond"
 else:
     raise ValueError("Model not recognised.")
+
+tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
+subjs = np.unique(tfr.metadata["Subj"].values)
+# check for missing conditions in each subject
+bad_subjs = []
+for subj in subjs:
+    this_df = tfr.metadata.query("Subj=='{}'".format(subj))
+    these_conds = list(np.unique(this_df[col].values))
+    checks = [c in these_conds for c in list(np.unique(tfr.metadata[col].values))]
+    if not all(checks):
+        bad_subjs.append(subj)
+for bs in bad_subjs:
+    print("Removing subject {}".format(bs))
+    tfr = tfr["Subj!='{}'".format(bs)]
+
+data = np.swapaxes(tfr.data[:,0],1,2)
+df = tfr.metadata.copy()
+df["Brain"] = np.zeros(len(df),dtype=np.float64)
+conds = list(np.unique(df[col].values))
+conds.remove("sham")
+
+md = smf.mixedlm("Brain ~ C({}, Treatment('sham'))".format(col), df, groups=df["Subj"])
 endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
 # main result
 if opt.iter == 0: # only do main result if this is the first node
@@ -91,6 +108,7 @@ if opt.iter == 0: # only do main result if this is the first node
         pickle.dump(main_result, f)
 
 # permute
+perm_data = data.copy()
 subjs = list(np.unique(groups))
 perm_results = []
 for perm_idx in range(perm_n):
@@ -101,15 +119,28 @@ for perm_idx in range(perm_n):
     for subj in subjs:
         subj_inds = np.where(groups==subj)[0]
         if bootstrap:
-            perm_inds = np.random.choice(subj_inds, size=len(subj_inds))
-            data[subj_inds,] = data[perm_inds, ]
+            sham_inds = np.where((df["Subj"]==subj) & (df[col]=='sham').values)[0]
+            for cond in conds:
+                cond_inds = np.where((df["Subj"]==subj) & (df[col]==cond).values)[0]
+                if len(cond_inds) < 2:
+                    continue
+                perm_inds = np.random.choice(cond_inds, size=len(cond_inds)//2+len(cond_inds)%2)
+                perm_inds = np.concatenate((perm_inds, np.random.choice(sham_inds,
+                                           size=len(cond_inds)//2)))
+                perm_data[cond_inds,] = data[perm_inds,]
+            non_sham_inds = np.where((df["Subj"]==subj) & (df[col]!='sham').values)[0]
+            perm_inds = np.random.choice(sham_inds, size=len(sham_inds)//2+len(sham_inds)%2)
+            perm_inds = np.concatenate((perm_inds, np.random.choice(non_sham_inds,
+                                       size=len(sham_inds)//2)))
+            perm_data[sham_inds,] = data[perm_inds,]
+
         else:
             # permute
             temp_slice = data[subj_inds,]
             np.random.shuffle(temp_slice)
             data[subj_inds,] = temp_slice
 
-    t_vals = mass_uv_lmm(data, endog, exog, groups)
+    t_vals = mass_uv_lmm(perm_data, endog, exog, groups)
     for idx, k in enumerate(exog_names):
         # positive values
         masked_tvals = t_vals[idx,].copy()
