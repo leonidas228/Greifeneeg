@@ -107,7 +107,7 @@ if opt.iter == 0: # only do main result if this is the first node
         tfce = np.reshape(_find_clusters(abs(masked_tvals), tfce_params)[1],
                           t_vals[idx,].shape)
         main_result["tfce_neg"][k] = tfce
-    with open("{}{}main_result_{}.pickle".format(proc_dir, opt.baseline, opt.model), "wb") as f:
+    with open("{}{}/main_result_{}.pickle".format(proc_dir, opt.baseline, opt.model), "wb") as f:
         pickle.dump(main_result, f)
 
 # permute
