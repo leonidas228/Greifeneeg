@@ -41,7 +41,7 @@ conds = ["eig30s", "fix30s"]
 factor_levels = [2]
 effects = 'A'
 tfce_params = dict(start=0, step=0.2)
-epo_pref = "ak_"
+epo_pref = ""
 
 epo = mne.read_epochs("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref, chan), preload=True)
 tfr = read_tfrs("{}{}grand_{}-tfr.h5".format(proc_dir, epo_pref, chan))[0]
@@ -53,6 +53,18 @@ data = np.swapaxes(tfr.data[:,0],1,2)
 
 df = tfr.metadata
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
+
+# check for missing conditions in each subject
+bad_subjs = []
+for subj in subjs:
+    this_df = tfr.metadata.query("Subj=='{}'".format(subj))
+    these_conds = list(np.unique(this_df[col].values))
+    checks = [c in these_conds for c in list(np.unique(tfr.metadata[col].values))]
+    if not all(checks):
+        bad_subjs.append(subj)
+for bs in bad_subjs:
+    print("Removing subject {}".format(bs))
+    tfr = tfr["Subj!='{}'".format(bs)]
 
 try:
     aics = np.load("{}{}aics.npy".format(proc_dir, epo_pref))

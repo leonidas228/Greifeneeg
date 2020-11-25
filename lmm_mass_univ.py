@@ -31,6 +31,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--perm', type=int, default=64)
 parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--model', type=str, default="cond")
+parser.add_argument('--baseline', type=str, default="mean")
 opt = parser.parse_args()
 
 if isdir("/home/jev"):
@@ -51,7 +52,7 @@ perm_n = opt.perm
 bootstrap = True
 
 #epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
-tfr = read_tfrs("{}grand_central-tfr.h5".format(proc_dir))[0]
+tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, opt.baseline))[0]
 tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
 #epo = epo["OscType=='{}'".format(osc)]
 
@@ -77,6 +78,8 @@ for bs in bad_subjs:
     tfr = tfr["Subj!='{}'".format(bs)]
 
 data = np.swapaxes(tfr.data[:,0],1,2)
+if opt.baseline == "mean":
+    data *= 1e+12
 df = tfr.metadata.copy()
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
 conds = list(np.unique(df[col].values))
@@ -104,7 +107,7 @@ if opt.iter == 0: # only do main result if this is the first node
         tfce = np.reshape(_find_clusters(abs(masked_tvals), tfce_params)[1],
                           t_vals[idx,].shape)
         main_result["tfce_neg"][k] = tfce
-    with open("{}main_result_{}.pickle".format(proc_dir, opt.model), "wb") as f:
+    with open("{}{}main_result_{}.pickle".format(proc_dir, opt.baseline, opt.model), "wb") as f:
         pickle.dump(main_result, f)
 
 # permute
@@ -117,7 +120,6 @@ for perm_idx in range(perm_n):
     perm_result["tfce_pos"] = {k:None for k in exog_names}
     perm_result["tfce_neg"] = {k:None for k in exog_names}
     for subj in subjs:
-        subj_inds = np.where(groups==subj)[0]
         if bootstrap:
             sham_inds = np.where((df["Subj"]==subj) & (df[col]=='sham').values)[0]
             for cond in conds:
@@ -136,6 +138,7 @@ for perm_idx in range(perm_n):
 
         else:
             # permute
+            subj_inds = np.where(groups==subj)[0]
             temp_slice = data[subj_inds,]
             np.random.shuffle(temp_slice)
             data[subj_inds,] = temp_slice
@@ -157,5 +160,5 @@ for perm_idx in range(perm_n):
 
     perm_results.append(perm_result)
 
-with open("{}perm_result_{}_{}_{}.pickle".format(proc_dir, perm_n, opt.iter, opt.model), "wb") as f:
+with open("{}{}/perm_result_{}_{}_{}.pickle".format(proc_dir, opt.baseline, perm_n, opt.iter, opt.model), "wb") as f:
     pickle.dump(perm_results, f)

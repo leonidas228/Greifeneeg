@@ -26,13 +26,19 @@ for chan in chans:
     epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs)
-    power.crop(tmin=-2.15, tmax=1.65)
-    power.apply_baseline((-2.15,-1.68), mode="logratio")
+    power.crop(tmin=-2.15, tmax=1.65) # get rid of edge effects
+
+    power_mean = power.copy().apply_baseline((-2.15,-1.68), mode="mean")
+    power_mean.crop(tmin=-1.5,tmax=1.5)
+    power_mean.save("{}{}grand_{}_mean-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
+
+    power_z = power.copy().apply_baseline((-2.15,-1.68), mode="zscore")
+    power_z.crop(tmin=-1.5,tmax=1.5)
+    power_z.save("{}{}grand_{}_zscore-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
+
+    power_logratio = power.copy().apply_baseline((-2.15,-1.68), mode="logratio")
+    power_logratio.crop(tmin=-1.5,tmax=1.5)
+    power.save("{}{}grand_{}_logratio-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
+
     power.crop(tmin=-1.5,tmax=1.5)
-    power.save("{}{}grand_{}-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
-
-    vals = power.data[:,0,].mean(axis=1).flatten()
-    plt.hist(vals, bins=100)
-
-    pos_thresh = np.percentile(vals, thresh)
-    neg_thresh = np.percentile(vals, 100-thresh)
+    power.save("{}{}grand_{}_none-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
