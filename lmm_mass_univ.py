@@ -32,6 +32,7 @@ parser.add_argument('--perm', type=int, default=64)
 parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--model', type=str, default="cond")
 parser.add_argument('--baseline', type=str, default="mean")
+parser.add_argument('--osc', type=str, default="SO")
 opt = parser.parse_args()
 
 if isdir("/home/jev"):
@@ -44,7 +45,7 @@ proc_dir = root_dir+"proc/"
 
 n_jobs = 8
 chan = "central"
-osc = "SO"
+osc = opt.osc
 factor_levels = [2]
 effects = 'A'
 tfce_params = dict(start=0, step=0.2)
@@ -160,5 +161,5 @@ for perm_idx in range(perm_n):
 
     perm_results.append(perm_result)
 
-with open("{}{}/perm_result_{}_{}_{}.pickle".format(proc_dir, opt.baseline, perm_n, opt.iter, opt.model), "wb") as f:
+with open("{}{}/{}/perm_result_{}_{}_{}.pickle".format(proc_dir, opt.baseline, osc, perm_n, opt.iter, opt.model), "wb") as f:
     pickle.dump(perm_results, f)
