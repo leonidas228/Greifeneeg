@@ -12,7 +12,8 @@ proc_dir = root_dir+"proc/"
 proc_dir = root_dir+"proc/"
 filelist = listdir(proc_dir)
 
-conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s", "sham"]
+conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s"]
+conds = ["sham30s", "sham2m", "sham5m"]
 excludes = []
 
 chan_dict = {"Vo":"eog","Vu":"eog","Re":"eog","Li":"eog","MovRe":"misc",

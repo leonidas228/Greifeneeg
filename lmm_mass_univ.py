@@ -33,6 +33,7 @@ parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--model', type=str, default="cond")
 parser.add_argument('--baseline', type=str, default="mean")
 parser.add_argument('--osc', type=str, default="SO")
+parser.add_argument('--dur', type=str, default="30s")
 opt = parser.parse_args()
 
 if isdir("/home/jev"):
@@ -46,6 +47,7 @@ proc_dir = root_dir+"proc/"
 n_jobs = 8
 chan = "central"
 osc = opt.osc
+dur = opt.dur
 factor_levels = [2]
 effects = 'A'
 tfce_params = dict(start=0, step=0.2)
@@ -64,7 +66,9 @@ elif opt.model == "cond":
 else:
     raise ValueError("Model not recognised.")
 
-tfr = tfr["Cond=='eig30s' or Cond=='fix30s' or Cond=='sham'"]
+targ_dir = "{}{}/{}/{}/".format(proc_dir, opt.baseline, osc, dur)
+
+tfr = tfr["Cond=='eig{}' or Cond=='fix{}' or Cond=='sham{}'".format(dur,dur,dur)]
 subjs = np.unique(tfr.metadata["Subj"].values)
 # check for missing conditions in each subject
 bad_subjs = []
@@ -84,9 +88,9 @@ if opt.baseline == "mean":
 df = tfr.metadata.copy()
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
 conds = list(np.unique(df[col].values))
-conds.remove("sham")
+conds.remove("sham{}".format(dur))
 
-md = smf.mixedlm("Brain ~ C({}, Treatment('sham'))".format(col), df, groups=df["Subj"])
+md = smf.mixedlm("Brain ~ C({}, Treatment('sham{}'))".format(col,dur), df, groups=df["Subj"])
 endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
 # main result
 if opt.iter == 0: # only do main result if this is the first node
@@ -108,7 +112,7 @@ if opt.iter == 0: # only do main result if this is the first node
         tfce = np.reshape(_find_clusters(abs(masked_tvals), tfce_params)[1],
                           t_vals[idx,].shape)
         main_result["tfce_neg"][k] = tfce
-    with open("{}{}/{}/main_result_{}.pickle".format(proc_dir, opt.baseline, osc, opt.model), "wb") as f:
+    with open("{}main_result_{}.pickle".format(targ_dir, opt.model), "wb") as f:
         pickle.dump(main_result, f)
 
 # permute
@@ -122,7 +126,7 @@ for perm_idx in range(perm_n):
     perm_result["tfce_neg"] = {k:None for k in exog_names}
     for subj in subjs:
         if bootstrap:
-            sham_inds = np.where((df["Subj"]==subj) & (df[col]=='sham').values)[0]
+            sham_inds = np.where((df["Subj"]==subj) & (df[col]=='sham{}'.format(dur)).values)[0]
             for cond in conds:
                 cond_inds = np.where((df["Subj"]==subj) & (df[col]==cond).values)[0]
                 if len(cond_inds) < 2:
@@ -131,7 +135,7 @@ for perm_idx in range(perm_n):
                 perm_inds = np.concatenate((perm_inds, np.random.choice(sham_inds,
                                            size=len(cond_inds)//2)))
                 perm_data[cond_inds,] = data[perm_inds,]
-            non_sham_inds = np.where((df["Subj"]==subj) & (df[col]!='sham').values)[0]
+            non_sham_inds = np.where((df["Subj"]==subj) & (df[col]!='sham{}'.format(dur)).values)[0]
             perm_inds = np.random.choice(sham_inds, size=len(sham_inds)//2+len(sham_inds)%2)
             perm_inds = np.concatenate((perm_inds, np.random.choice(non_sham_inds,
                                        size=len(sham_inds)//2)))
@@ -161,5 +165,5 @@ for perm_idx in range(perm_n):
 
     perm_results.append(perm_result)
 
-with open("{}{}/{}/perm_result_{}_{}_{}.pickle".format(proc_dir, opt.baseline, osc, perm_n, opt.iter, opt.model), "wb") as f:
+with open("{}perm_result_{}_{}_{}.pickle".format(targ_dir, perm_n, opt.iter, opt.model), "wb") as f:
     pickle.dump(perm_results, f)
