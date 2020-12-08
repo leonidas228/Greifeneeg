@@ -34,6 +34,7 @@ parser.add_argument('--model', type=str, default="cond")
 parser.add_argument('--baseline', type=str, default="mean")
 parser.add_argument('--osc', type=str, default="SO")
 parser.add_argument('--dur', type=str, default="30s")
+parser.add_argument('--sync', action="store_true")
 opt = parser.parse_args()
 
 if isdir("/home/jev"):
@@ -53,12 +54,11 @@ effects = 'A'
 tfce_params = dict(start=0, step=0.2)
 perm_n = opt.perm
 bootstrap = True
+sync = opt.sync
 
-#epo = mne.read_epochs("{}grand_{}-epo.fif".format(proc_dir, chan), preload=True)
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, opt.baseline))[0]
 tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
-#epo = epo["OscType=='{}'".format(osc)]
-
+subjs = np.unique(tfr.metadata["Subj"].values)
 if opt.model == "simple":
     col = "Stim"
 elif opt.model == "cond":
@@ -66,18 +66,27 @@ elif opt.model == "cond":
 else:
     raise ValueError("Model not recognised.")
 
-targ_dir = "{}{}/{}/{}/".format(proc_dir, opt.baseline, osc, dur)
+bad_subjs = []
+# if sync then remove all subjects recorded under asynchronous conditions (<31)
+if sync:
+    targ_dir = "{}{}/{}/{}/sync/".format(proc_dir, opt.baseline, osc, dur)
+    for subj in list(subjs):
+        if int(subj) < 31:
+            bad_subjs.append(subj)
+else:
+    targ_dir = "{}{}/{}/{}/async/".format(proc_dir, opt.baseline, osc, dur)
 
 tfr = tfr["Cond=='eig{}' or Cond=='fix{}' or Cond=='sham{}'".format(dur,dur,dur)]
-subjs = np.unique(tfr.metadata["Subj"].values)
+
 # check for missing conditions in each subject
-bad_subjs = []
 for subj in subjs:
     this_df = tfr.metadata.query("Subj=='{}'".format(subj))
     these_conds = list(np.unique(this_df[col].values))
     checks = [c in these_conds for c in list(np.unique(tfr.metadata[col].values))]
     if not all(checks):
         bad_subjs.append(subj)
+
+# remove all subjects with missing conditions or not meeting synchronicity criterion
 for bs in bad_subjs:
     print("Removing subject {}".format(bs))
     tfr = tfr["Subj!='{}'".format(bs)]
