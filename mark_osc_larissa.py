@@ -75,16 +75,15 @@ if isdir("/home/jev"):
 elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
-conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s"]
-conds = ["sham30s", "sham2m", "sham5m"]
+conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham30s", "sham2m", "sham5m"]
 filelist = listdir(proc_dir)
 # chan_groups = {"frontal":["Fz","FC1","FC2"],
 #                "central":["Cz","CP1","CP2"]}
 chan_groups = {"central":["Fz","FC1","FC2", "Cz","CP1","CP2"]}
 amp_percentile = 65
-min_samples = 30
+min_samples = 10
 minmax_freqs = [(0.16, 1.25), (0.75, 4.25)]
-minmax_times = [(1, 2), (0.25, 1)]
+minmax_times = [(0.8, 2), (0.25, 1)]
 osc_types = ["SO", "deltO"]
 includes = []
 amp_thresh_dict = {"Subj":[], "Cond":[], "OscType":[], "Chan":[], "Thresh":[]}
@@ -191,7 +190,7 @@ for filename in filelist:
                     df_dict["Index"].append(int(eve))
                     df_dict["Subj"].append(subj)
                     df_dict["Cond"].append(cond)
-                    if cond != "sham":
+                    if "sham" not in cond:
                         df_dict["Stim"].append("stim")
                     else:
                         df_dict["Stim"].append("sham")
@@ -199,6 +198,8 @@ for filename in filelist:
                 df = pd.DataFrame.from_dict(df_dict)
                 epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=None,
                                  baseline=None, metadata=df, event_repeated="drop").load_data()
+                raw.save("{}NAP_{}_{}_{}_{}-raw.fif".format(proc_dir,subj,cond,k,osc_type),
+                         overwrite=True)
                 epo.save("{}NAP_{}_{}_{}_{}-epo.fif".format(proc_dir,subj,cond,k,osc_type),
                          overwrite=True)
 

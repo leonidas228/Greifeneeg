@@ -41,7 +41,7 @@ for chan in chans:
                 epos.append(epo)
                 for pp in ["Pre","Post"]:
                     for ind in range(max_ind+1):
-                        if cond != "sham":
+                        if "sham" not in cond:
                             df_dict["Stim"].append("Stim")
                         else:
                             df_dict["Stim"].append("Sham")
@@ -53,6 +53,7 @@ for chan in chans:
                         df_dict["Index"].append(ind)
                         df_dict["Number"].append(len(epo["PrePost=='{}' and Index=='{}'".format(pp,ind)]))
     grand_epo = mne.concatenate_epochs(epos)
+    grand_epo = grand_epo["Index < 5"]
     grand_epo.save("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref, chan), overwrite=True)
 df = pd.DataFrame.from_dict(df_dict)
 df.to_pickle("{}{}grand_df.pickle".format(proc_dir, epo_pref))

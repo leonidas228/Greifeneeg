@@ -11,7 +11,7 @@ if isdir("/home/jev"):
 elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 
-dur = "5m"
+dur = "30s"
 raw_dir = root_dir+"raw/{}_sham/".format(dur) # get raw files from here
 proc_dir = root_dir+"proc/" # save the processed files here
 filelist = listdir(raw_dir) # get list of all files in raw directory
@@ -47,11 +47,11 @@ for filename in filelist: # cycle through all files in raw directory
                     print("\n\nIncorrect trigger for subject {}, {}\n\n".format(subj, dur))
                     bads.append(filename)
                     continue
-                stim_idx = int(annot_match.group(1))
+                stim_idx = int(annot_match.group(1))-1
                 if post_only:
                     these_annotations.append(onset, duration,
                                              "BAD_Stimulation {}".format(stim_idx))
-                    if stim_idx == 1:
+                    if stim_idx == 0:
                         these_annotations.append(onset - analy_time, analy_time,
                                                  "Pre_Stimulation {}".format(stim_idx))
                     these_annotations.append(onset + duration, analy_time,

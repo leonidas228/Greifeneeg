@@ -5,6 +5,7 @@ import re
 import numpy as np
 from mne.time_frequency import tfr_morlet
 import matplotlib.pyplot as plt
+from scipy.signal import find_peaks_cwt
 plt.ion()
 
 def annot_subset(annotations, match_str):
@@ -45,7 +46,7 @@ for filename in filelist:
         raw_work.pick_channels([channel])
         raw_work.filter(l_freq=spindle_freq[0], h_freq=spindle_freq[1], n_jobs=n_jobs)
         epo = mne.make_fixed_length_epochs(raw_work, duration=raw_work.times[-1])
-        power = tfr_morlet(epo, spindle_freq, n_cycles=3, average=False,
+        power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                            return_itc=False, n_jobs=n_jobs)
 
         tfr = np.zeros(0)
@@ -53,7 +54,7 @@ for filename in filelist:
             tfr = np.concatenate((tfr,np.mean(epo_tfr[:,0,],axis=0)))
         gw_len = np.round(gw_time * raw.info["sfreq"]).astype(int)
         gauss_win = np.exp(-0.5*((np.arange(gw_len)-gw_len/2)/(0.5*gw_len/2))**2)
-        tfr_con = np.convolve(tfr, gauss_win, mode="same")
+        #tfr_con = np.convolve(tfr, gauss_win, mode="same")
         tfr_con = tfr.copy()
 
         tfr_aschan = np.zeros(len(raw_work))
@@ -62,38 +63,16 @@ for filename in filelist:
         raw_work.add_channels([tfr_raw], force_update_info=True)
         raw.add_channels([tfr_raw], force_update_info=True)
 
-        upper_thresh = tfr_con.mean() + spindle_thresh[1]*tfr_con.std()
-        lower_thresh = tfr_con.mean() + spindle_thresh[0]*tfr_con.std()
-        tfr_thresh = tfr_con - lower_thresh
-        # need to add infinitesimals to zeros to prevent weird x-crossing bugs
-        for null_idx in list(np.where(tfr_thresh==0)[0]):
-            if null_idx:
-                tfr_thresh[null_idx] = 1e-16*np.sign(tfr_thresh[null_idx-1])
-            else:
-                tfr_thresh[null_idx] = 1e-16*np.sign(tfr_thresh[null_idx+1])
-        tfr_xcross = np.where((tfr_thresh[1:] * tfr_thresh[:-1]<0))[0]
-        x_start = 0 if tfr_thresh[0] < 0 else 1
-        spindles = []
-        spindle_time_ind = int(raw_work.info["sfreq"] * spindle_time)
-        spindle_idx = 0
-        for xc in range(x_start, len(tfr_xcross), 2):
-            if xc+1 >= len(tfr_xcross):
-                continue # recording ended on a possible spindle; ignore
-            if (tfr_xcross[xc+1] - tfr_xcross[xc]) < spindle_time_ind:
-                continue
-            if tfr_con[tfr_xcross[xc]:tfr_xcross[xc+1]].max() < upper_thresh:
-                continue
-            raw_work.annotations.append(ft+raw_work.times[tfr_xcross[xc]],
-                                        raw_work.times[tfr_xcross[xc+1]] - raw_work.times[tfr_xcross[xc]],
-                                        "Spindle {}".format(spindle_idx))
-            spindle_peak = raw_work.times[np.argmax(tfr_con[tfr_xcross[xc]:tfr_xcross[xc+1]]) + tfr_xcross[xc]]
-            raw_work.annotations.append(ft+spindle_peak, 0, "Spindle peak {}".format(spindle_idx))
-            spindle_idx += 1
-            print("Spindle at {}".format(raw_work.times[tfr_xcross[xc]]))
+        widths = [int(raw_work.info["sfreq"]*spindle_time)]
+        peaks = find_peaks_cwt(tfr_con, widths)
+        peak_times = list(raw_work.times[peaks])
+        for peak_idx, peak in enumerate(peak_times):
+            raw_work.annotations.append(ft+peak, 0, "Spindle peak {}".format(peak_idx))
+
         raw.set_annotations(raw_work.annotations)
         raw.save("{}spind_{}_NAP_{}_{}_{}-raw.fif".format(proc_dir,subj,cond,ort,osc),
                  overwrite=True)
 
-        raw_work.set_annotations(annot_subset(raw_work.annotations, "Spindle"))
-        raw_work.plot(scalings="auto")
-        breakpoint()
+        # raw_work.set_annotations(annot_subset(raw_work.annotations, "Spindle"))
+        # raw_work.plot(scalings="auto")
+        # breakpoint()
