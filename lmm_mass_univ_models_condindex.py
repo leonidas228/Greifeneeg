@@ -48,6 +48,10 @@ bootstrap = True
 for sync in syncs:
     for dur in durs:
         tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
+        df = tfr.metadata
+        inds = (df["PrePost"]=="Pre").values & (df["Index"]==0).values
+        df.loc[inds, "Index"] = "Pre"
+        df.loc[inds, "PrePost"] = "Post"
         tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
         subjs = np.unique(tfr.metadata["Subj"].values)
         col = "Cond"
@@ -78,8 +82,8 @@ for sync in syncs:
         df = tfr.metadata.copy()
         df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
-        formula = "Brain ~ C({}, Treatment('{}'))".format(col,t_string)
-        outfile = "{}main_fits_{}_cond_{}_{}_{}.pickle".format(proc_dir, baseline, osc, dur, sync)
+        formula = "Brain ~ C({}, Treatment('{}'))*C(Index, Treatment('Pre'))".format(col,t_string)
+        outfile = "{}main_fits_{}_condidx_{}_{}_{}.pickle".format(proc_dir, baseline, osc, dur, sync)
         md = smf.mixedlm(formula, df, groups=df["Subj"])
         endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
         print(exog_names)
@@ -88,4 +92,3 @@ for sync in syncs:
         fits = {"exog_names":exog_names, "fits":fits}
         with open(outfile, "wb") as f:
             pickle.dump(fits, f)
-        del fits

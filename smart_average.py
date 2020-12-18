@@ -11,9 +11,9 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir+"proc/"
 
 syncs = ["async", "sync"]
-syncs = ["sync"]
+#syncs = ["sync"]
 durs = ["30s", "2m", "5m"]
-durs = ["30s"]
+#durs = ["30s"]
 baseline = "logratio"
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]

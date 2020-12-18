@@ -39,15 +39,15 @@ proc_dir = root_dir+"proc/"
 
 n_jobs = 8
 chan = "central"
-baseline = "logratio"
+baseline = "zscore"
 osc = "SO"
-durs = ["30s", "2m", "5m"]
 conds = ["sham", "fix", "eig"]
-#durs = ["30s"]
+#conds = ["fix", "eig"]
+durs = ["2m"]
 #durs = ["2m", "5m"]
 bootstrap = True
 syncs = ["async", "sync"]
-#syncs = ["sync"]
+syncs = ["sync"]
 
 for sync in syncs:
     for dur in durs:
@@ -81,9 +81,8 @@ for sync in syncs:
             df = tfr.metadata.copy()
             df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
-
             formula = "Brain ~ C(Index, Treatment('Pre'))"
-            outfile = "{}main_fits_index_{}_simple_{}_{}_{}.pickle".format(proc_dir, baseline, osc, cond, sync)
+            outfile = "{}main_fits_index_{}_{}_{}{}_{}.pickle".format(proc_dir, baseline, osc, cond, dur, sync)
             md = smf.mixedlm(formula, df, groups=df["Subj"])
             endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
             print(exog_names)

@@ -19,7 +19,7 @@ proc_dir = root_dir+"proc/"
 perm_chunk = 64
 perm_chunk_n = 64
 
-dur = "30s"
+dur = "5m"
 model= "cond"
 baseline = "logratio"
 chan = "central"
@@ -88,10 +88,10 @@ for bs in bad_subjs:
     tfr = tfr["Subj!='{}'".format(bs)]
     epo = epo["Subj!='{}'".format(bs)]
 
-vmin, vmax = -0.2, 0.2
+
 vmin, vmax = -2e-11, 1.1e-10
-vmin, vmax = 0, 125
 vmin, vmax = -.3, 0
+#vmin, vmax = -1, 0
 fig, axes = plt.subplots(4, 2, figsize=(38.4, 21.6))
 evos = {}
 tfrs = {}
@@ -110,7 +110,7 @@ for cond_idx, cond in enumerate(["fix"+dur, "eig"+dur]):
                                  title="Slow Oscillations: {}".format(cond))
     tfrs[cond] = read_tfrs("{}predicted_cond_{}_{}_{}_{}_{}-tfr.h5".format(proc_dir, osc, baseline, dur, sync, cond))[0]
     tfrs[cond].plot(picks="central", axes=axes[2][cond_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis")
-    mask = (main_tfce_pos[cond]>pos_thresh[cond]).T
+    mask = (main_tfce_neg[cond]>neg_thresh[cond]).T
     contrast = tfrs[cond]-tfrs["sham"+dur]
     #contrast.data[0,] = main_tfce_pos[cond].T
     contrast.plot(picks="central", axes=axes[3][cond_idx],

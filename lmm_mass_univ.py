@@ -1,4 +1,4 @@
-from os import mkdir
+from os import makedirs
 import mne
 from mne.time_frequency import read_tfrs
 import statsmodels.formula.api as smf
@@ -77,7 +77,7 @@ if sync:
 else:
     targ_dir = "{}{}/{}/{}/async/".format(proc_dir, opt.baseline, osc, dur)
 if not isdir(targ_dir):
-    mkdir(targ_dir)
+    makedirs(targ_dir)
 
 tfr = tfr["Cond=='eig{}' or Cond=='fix{}' or Cond=='sham{}'".format(dur,dur,dur)]
 

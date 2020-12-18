@@ -12,12 +12,15 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir+"proc/"
 
 n_jobs = 8
-spindle_freq = np.arange(10,20)
+spindle_freq = np.arange(10,21)
 chans = ["central"]
 osc_types = ["SO", "deltO"]
 sfreq = 50.
 thresh = 99.9
 epo_pref = ""
+
+bl = (-2.15,-1.2)
+crop = (-1.2,1.2)
 
 for chan in chans:
     epo = mne.read_epochs("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref,chan),
@@ -25,23 +28,23 @@ for chan in chans:
     epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs)
-    power.crop(tmin=-2.15, tmax=1.65) # get rid of edge effects
+    power.crop(tmin=-2.15, tmax=1.2) # get rid of edge effects
 
-    power_mean = power.copy().apply_baseline((-2.15,-1.68), mode="mean")
-    power_mean.crop(tmin=-1.5,tmax=1.5)
+    power_mean = power.copy().apply_baseline((bl[0],bl[1]), mode="mean")
+    power_mean.crop(tmin=crop[0],tmax=crop[1])
     power_mean.save("{}{}grand_{}_mean-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
 
-    power_z = power.copy().apply_baseline((-2.15,-1.68), mode="zscore")
-    power_z.crop(tmin=-1.5,tmax=1.5)
+    power_z = power.copy().apply_baseline((bl[0],bl[1]), mode="zscore")
+    power_z.crop(tmin=crop[0],tmax=crop[1])
     power_z.save("{}{}grand_{}_zscore-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
 
-    power_logratio = power.copy().apply_baseline((-2.15,-1.68), mode="logratio")
-    power_logratio.crop(tmin=-1.5,tmax=1.5)
+    power_logratio = power.copy().apply_baseline((bl[0],bl[1]), mode="logratio")
+    power_logratio.crop(tmin=crop[0],tmax=crop[1])
     power_logratio.save("{}{}grand_{}_logratio-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
 
-    power_zlogratio = power.copy().apply_baseline((-2.15,-1.68), mode="zlogratio")
-    power_zlogratio.crop(tmin=-1.5,tmax=1.5)
+    power_zlogratio = power.copy().apply_baseline((bl[0],bl[1]), mode="zlogratio")
+    power_zlogratio.crop(tmin=crop[0],tmax=crop[1])
     power_zlogratio.save("{}{}grand_{}_zlogratio-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
 
-    power.crop(tmin=-1.5,tmax=1.5)
+    power.crop(tmin=crop[0],tmax=crop[1])
     power.save("{}{}grand_{}_none-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
