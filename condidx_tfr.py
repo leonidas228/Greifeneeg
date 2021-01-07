@@ -45,7 +45,7 @@ tfr_avg = tfr.average()
 
 for osc in oscs:
     for sync in syncs:
-        fig, axes = plt.subplots(5,6)
+        fig, axes = plt.subplots(5,6, figsize=(38.4, 21.6))
         tfr_c = tfr_avg.copy()
         dat_shape = tfr_c.data.shape[1:]
         with open("{}main_fits_{}_condidx_{}_{}_{}.pickle".format(proc_dir,baseline,osc,dur,sync), "rb") as f:
@@ -71,8 +71,9 @@ for osc in oscs:
                     else:
                         vmin, vmax = -4, 4
                     tfr_c.plot(picks="central", axes=axes[ind_idx][cond_idx*2+val_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis", mask=mask, mask_style="contour")
+        plt.savefig("condidx/{}_{}_{}_{}_byindex.tif".format(baseline, osc, dur, sync))
 
-        fig, axes = plt.subplots(2,2)
+        fig, axes = plt.subplots(2,2, figsize=(38.4, 21.6))
         for cond_idx,cond in enumerate(["fix","eig"]):
             data = np.zeros((3, len(modfit)))
             for mf_idx, mf in enumerate(modfit):
@@ -91,3 +92,5 @@ for osc in oscs:
                 else:
                     vmin, vmax = -4, 4
                 tfr_c.plot(picks="central", axes=axes[cond_idx][val_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis", mask=mask, mask_style="contour")
+
+        plt.savefig("condidx/{}_{}_{}_{}_main.tif".format(baseline, osc, dur, sync))

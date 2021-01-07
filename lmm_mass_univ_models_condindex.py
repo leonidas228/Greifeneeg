@@ -41,8 +41,8 @@ n_jobs = 8
 chan = "central"
 baseline = "zscore"
 osc = "SO"
-durs = ["5m"]
-syncs = ["sync"]
+durs = ["30s","2m","5m"]
+syncs = ["sync","async"]
 bootstrap = True
 
 for sync in syncs:

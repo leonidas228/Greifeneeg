@@ -12,8 +12,8 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-syncs = ["sync"]
-durs = ["5m"]
+syncs = ["async"]
+durs = ["30s"]
 conds = ["sham","fix","eig"]
 oscs = ["SO"]
 baseline = "zscore"
