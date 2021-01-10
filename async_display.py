@@ -16,6 +16,8 @@ asyncs = ['015_eig30s', '027_eig30s', '046_eig30s', '033_eig30s', '053_eig30s',
           '022_eig5m', '031_eig5m', '035_eig5m', '046_eig5m', '048_eig5m',
           '044_eig5m', '053_eig5m']
 
+asyncs = ["027_eig30s", "035_eig5m"]
+
 left_chans = ["FC5", "FC1", "C3", "CP1", "T7", "P3"]
 right_chans = ["FC6", "FC2", "C6", "CP2", "T8", "P4"]
 n_jobs = 8
@@ -42,7 +44,7 @@ for asyn in asyncs:
         seconds = 30
 
     try:
-        epo = mne.Epochs(raw, events, baseline=None, tmin=0, tmax=60+seconds,
+        epo = mne.Epochs(raw, events, baseline=None, tmin=0, tmax=40+seconds,
                          reject_by_annotation=False, preload=True)
     except:
         continue
@@ -60,7 +62,6 @@ for asyn in asyncs:
     print("hi")
     plt.figure()
     plt.plot(phase_diff.T)
-
 
     breakpoint()
     plt.close("all")

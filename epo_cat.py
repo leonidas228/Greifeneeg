@@ -53,6 +53,31 @@ for chan in chans:
                         df_dict["Index"].append(ind)
                         df_dict["Number"].append(len(epo["PrePost=='{}' and Index=='{}'".format(pp,ind)]))
     grand_epo = mne.concatenate_epochs(epos)
+    df = grand_epo.metadata
+
+    # special cases
+    drop_inds = np.array([])
+    temp = (df["Subj"]=="035").values & (df["Cond"]=="eig5m").values & (df["Index"]>=3).values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="033").values & (df["Cond"]=="eig30s").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="044").values & (df["Cond"]=="fix2m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="046").values & (df["Cond"]=="eig2m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="022").values & (df["Cond"]=="eig5m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="031").values & (df["Cond"]=="eig5m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="046").values & (df["Cond"]=="eig5m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="044").values & (df["Cond"]=="eig5m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="053").values & (df["Cond"]=="eig5m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+
+    grand_epo.drop(np.array(drop_inds))
+
     grand_epo = grand_epo["Index < 5"]
     grand_epo.save("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref, chan), overwrite=True)
 df = pd.DataFrame.from_dict(df_dict)
