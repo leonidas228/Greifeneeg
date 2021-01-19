@@ -18,7 +18,7 @@ epo_pref = "ak_"
 epo_pref = ""
 
 df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[],
-           "Index":[], "Stim":[]}
+           "Index":[], "Stim":[], "Sync":[]}
 for chan in chans:
     epos = []
     for ot in osc_types:
@@ -46,6 +46,10 @@ for chan in chans:
                         else:
                             df_dict["Stim"].append("Sham")
                         df_dict["Subj"].append(subj)
+                        if int(subj) < 31:
+                            df_dict["Sync"].append("async")
+                        else:
+                            df_dict["Sync"].append("sync")
                         df_dict["Cond"].append(cond)
                         df_dict["OscType"].append(osc_type)
                         df_dict["PrePost"].append(pp)

@@ -41,8 +41,10 @@ n_jobs = 8
 chan = "central"
 baseline = "zscore"
 osc = "SO"
-durs = ["5m"]
-syncs = ["sync"]
+durs = ["30s","2m","5m"]
+syncs = ["async", "sync"]
+use_groups = False
+balance_conds = False
 bootstrap = True
 
 for sync in syncs:
@@ -59,13 +61,14 @@ for sync in syncs:
             for subj in list(subjs):
                 if int(subj) < 31:
                     bad_subjs.append(subj)
-        # check for missing conditions in each subject
-        for subj in subjs:
-            this_df = tfr.metadata.query("Subj=='{}'".format(subj))
-            these_conds = list(np.unique(this_df[col].values))
-            checks = [c in these_conds for c in list(np.unique(tfr.metadata[col].values))]
-            if not all(checks):
-                bad_subjs.append(subj)
+        if balance_conds:
+            # check for missing conditions in each subject
+            for subj in subjs:
+                this_df = tfr.metadata.query("Subj=='{}'".format(subj))
+                these_conds = list(np.unique(this_df[col].values))
+                checks = [c in these_conds for c in list(np.unique(tfr.metadata[col].values))]
+                if not all(checks):
+                    bad_subjs.append(subj)
         # remove all subjects with missing conditions or not meeting synchronicity criterion
         bad_subjs = list(set(bad_subjs))
         for bs in bad_subjs:
@@ -80,7 +83,8 @@ for sync in syncs:
 
         formula = "Brain ~ C({}, Treatment('{}'))".format(col,t_string)
         outfile = "{}main_fits_{}_cond_{}_{}_{}.pickle".format(proc_dir, baseline, osc, dur, sync)
-        md = smf.mixedlm(formula, df, groups=df["Subj"])
+        groups = df["Subj"] if use_groups else pd.Series(np.zeros(len(df),dtype=int))
+        md = smf.mixedlm(formula, df, groups=groups)
         endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
         print(exog_names)
         #main result

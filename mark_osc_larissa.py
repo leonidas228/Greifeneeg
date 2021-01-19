@@ -174,7 +174,7 @@ for filename in filelist:
                 raw.set_annotations(new_annots)
                 events = mne.events_from_annotations(raw, check_trough_annot)
                 df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Index":[],"Stim":[],
-                           "PureIndex":[], "OscType":[]}
+                           "PureIndex":[], "OscType":[], "Sync":[]}
                 for event in np.nditer(events[0][:,-1]):
                     eve = event.copy()
                     if eve >= 100:
@@ -189,6 +189,10 @@ for filename in filelist:
                         df_dict["PrePost"].append("Pre")
                     df_dict["Index"].append(int(eve))
                     df_dict["Subj"].append(subj)
+                    if int(subj) < 31:
+                        df_dict["Sync"].append("async")
+                    else:
+                        df_dict["Sync"].append("sync")
                     df_dict["Cond"].append(cond)
                     if "sham" not in cond:
                         df_dict["Stim"].append("stim")
