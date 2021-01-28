@@ -40,7 +40,7 @@ proc_dir = root_dir+"proc/"
 n_jobs = 8
 chan = "central"
 baseline = "zscore"
-osc = "deltO"
+osc = "SO"
 durs = ["30s","2m","5m"]
 sync_facts = ["syncfact", "nosyncfact"]
 #sync_facts = ["syncfact"]
@@ -49,6 +49,10 @@ use_groups = ["group", "nogroup"]
 balance_conds = False
 bootstrap = True
 use_badsubjs = {"all_subj":[]}
+use_badsubjs = {"bad10":["054","027","045","002","044","046","028","009","015","003"]}
+use_badsubjs = {"bad7":["054","027","045","002","028","009","003"]}
+use_badsubjs = {"sync":['002','003','005','006','007','009','013','015','016',
+                        '017','018','021','022','024','025','026','027','028']}
 
 for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:

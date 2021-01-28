@@ -12,7 +12,7 @@ conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s", "sham30s", "sham2m",
 filelist = listdir(proc_dir)
 excludes = ["031_eig30s", "045_fix5m", "046_eig30s"]
 excludes = []
-overwrite = True
+overwrite = False
 
 for filename in filelist:
     this_match = re.match("af_NAP_(\d{3})_(.*)-raw.fif",filename)

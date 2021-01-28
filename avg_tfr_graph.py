@@ -37,10 +37,13 @@ syncs = ["async", "sync"]
 syncs = ["async"]
 conds = ["sham","fix","eig"]
 balance_conds = False
-vmin, vmax = -4, 4
-sync_titles = {"async":"non-synchronised included", "sync":"synchronised only"}
+vmin, vmax = -3, 3
+sync_titles = {"async":"non-synchronised", "sync":"synchronised",
+               "all":"all subjects"}
 toi = .26
 foi = 15
+toi = None
+foi = None
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
 tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
@@ -76,6 +79,10 @@ for sync in syncs:
         if sync == "sync":
             for subj in list(subjs):
                 if int(subj) < 31:
+                    bad_subjs.append(subj)
+        if sync == "async":
+            for subj in list(subjs):
+                if int(subj) >= 31:
                     bad_subjs.append(subj)
         if balance_conds:
         # check for missing conditions in each subject

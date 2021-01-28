@@ -19,20 +19,21 @@ proc_dir = root_dir+"proc/"
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
 oscs = ["SO", "deltO"]
-#oscs = ["SO"]
+oscs = ["SO"]
 baseline = "zscore"
 to_plot = ["coef"]
-col_titles = ["Intercept (sham)", "Fixed frequency", "Eigenfrequency",
-              "Fixed frequency\nsynchronisation",
-              "Eigenfrequency\nsynchronisation"]
+col_dict = {"sham":"Intercept (sham)", "fix":"Fixed frequency",
+            "eig":"Eigenfrequency", "fix_sync":"Fixed frequency\nSynchronisation",
+            "eig_sync":"Eigenfrequency\nSynchronisation"}
 sync_facts = ["syncfact", "nosyncfact"]
-sync_facts = ["syncfact"]
+sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
 use_groups = ["nogroup"]
 balance_conds = False
 bootstrap = True
-use_badsubjs = {"all_subj":[]}
-
+use_badsubjs = ["all_subj"]
+#use_badsubjs = ["bad10"]
+#use_badsubjs = ["sync"]
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
 tfr_avg = tfr.average()
@@ -45,24 +46,27 @@ evo = epo.average()
 ev_min, ev_max = evo.data.min(), evo.data.max()
 
 for osc in oscs:
-    for bs_name in use_badsubjs.keys():
+    for bs_name in use_badsubjs:
         for use_group in use_groups:
             for sync_fact in sync_facts:
-                fig, axes = plt.subplots(len(durs),5*len(to_plot), figsize=(38.4,21.6))
+                these_conds = [cond+"{}" for cond in conds]
+                if sync_fact == "syncfact":
+                    these_conds += ["eig{}_sync", "fix{}_sync"]
+                fig, axes = plt.subplots(len(durs),len(these_conds)*len(to_plot), figsize=(38.4,21.6))
                 for dur_idx,dur in enumerate(durs):
                     cond_keys = {"sham{}".format(dur):"Intercept",
                                  "eig{}".format(dur):"C(Cond, Treatment('sham{}'))[T.eig{}]".format(dur,dur),
                                  "fix{}".format(dur):"C(Cond, Treatment('sham{}'))[T.fix{}]".format(dur,dur),
                                  "eig{}_sync".format(dur):"C(Cond, Treatment('sham{}'))[T.eig{}]:C(Sync, Treatment('sync'))[T.async]".format(dur,dur),
                                  "fix{}_sync".format(dur):"C(Cond, Treatment('sham{}'))[T.fix{}]:C(Sync, Treatment('sync'))[T.async]".format(dur,dur)}
-
+                    dur_conds = [c.format(dur) for c in these_conds]
                     tfr_c = tfr_avg.copy()
                     dat_shape = tfr_c.data.shape[1:]
                     with open("{}main_fits_{}_cond_{}_{}_{}_{}_{}.pickle".format(proc_dir, baseline, osc, dur, bs_name, use_group, sync_fact), "rb") as f:
                         fits = pickle.load(f)
                     exog_names = fits["exog_names"]
                     modfit = fits["fits"]
-                    for en_idx,en in enumerate(cond_keys.keys()):
+                    for en_idx,en in enumerate(dur_conds):
 
                         # get osc ERP and normalise
                         e = epo.copy()
@@ -92,13 +96,21 @@ for osc in oscs:
                                 elif baseline == "zlogratio":
                                     vmin, vmax = None, None
                             else:
-                                vmin, vmax = -1.5, 1.5
+                                vmin, vmax = -2.5, 2.5
                             tfr_c.plot(picks="central", axes=axes[dur_idx][en_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis", mask=mask, mask_style="contour")
                             axes[dur_idx][en_idx].plot(tfr.times, evo_data[0,],
                                                        color="gray", alpha=0.8,
                                                        linewidth=10)
                             if dur_idx == 0:
-                                axes[dur_idx][en_idx].set_title(col_titles[en_idx])
+                                if "fix" in en:
+                                    typ = "fix"
+                                elif "eig" in en:
+                                    typ = "eig"
+                                else:
+                                    typ = "sham"
+                                if "sync" in en:
+                                    typ += "_sync"
+                                axes[dur_idx][en_idx].set_title(col_dict[typ])
                             if en_idx*len(to_plot)+idx == len(exog_names)*len(to_plot)-1:
                                 rax = axes[dur_idx][en_idx].twinx()
                                 plt.ylabel("{}".format(dur))

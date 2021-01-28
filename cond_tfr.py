@@ -23,7 +23,7 @@ oscs = ["SO", "deltO"]
 #oscs = ["SO"]
 baseline = "zscore"
 to_plot = ["coef"]
-col_titles = ["Intercept (sham)", "Fixed frequency", "Eigenfrequency"]
+col_dict = {"sham":"Intercept (sham)", "fix":"Fixed frequency", "eig":"Eigenfrequency"}
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
 tfr_avg = tfr.average()
@@ -90,20 +90,26 @@ for osc in oscs:
                         elif baseline == "zlogratio":
                             vmin, vmax = None, None
                     else:
-                        vmin, vmax = -1.5, 1.5
+                        vmin, vmax = -2.5, 2.5
                     tfr_c.plot(picks="central", axes=axes[dur_idx][en_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis", mask=mask, mask_style="contour")
                     axes[dur_idx][en_idx].plot(tfr.times, evo_data[0,],
                                                color="gray", alpha=0.8,
                                                linewidth=10)
                     if dur_idx == 0:
-                        axes[dur_idx][en_idx].set_title(col_titles[en_idx])
+                        if "fix" in en:
+                            typ = "fix"
+                        elif "eig" in en:
+                            typ = "eig"
+                        else:
+                            typ = "sham"
+                        axes[dur_idx][en_idx].set_title(col_dict[typ])
                     if en_idx*len(to_plot)+idx == len(exog_names)*len(to_plot)-1:
                         rax = axes[dur_idx][en_idx].twinx()
                         plt.ylabel("{}".format(dur))
                         plt.yticks(ticks=[], labels=[])
 
-        if sync == "sync":
-            plt.suptitle("{}, synchronised only".format(osc))
-        else:
-            plt.suptitle("{}, non-synchronised included".format(osc))
+        # if sync == "sync":
+        #     plt.suptitle("{}, synchronised only".format(osc))
+        # else:
+        #     plt.suptitle("{}, non-synchronised included".format(osc))
         plt.savefig("../images/lmmtfr_{}_{}.tif".format(osc, sync))

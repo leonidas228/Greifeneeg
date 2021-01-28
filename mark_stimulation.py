@@ -41,8 +41,8 @@ for filename in filelist:
         subj, tag = this_match.group(1), int(this_match.group(2))
         if tag < 2: # skip the first two non-stim recordings
             continue
-        # if subj != "033" or tag != 2:
-        #     continue
+        if subj != "054":
+            continue
         ur_raw = mne.io.Raw(proc_dir+filename,preload=True)
         raw = ur_raw.copy()
         psds, freqs = psd_multitaper(raw, fmax=2, picks=picks, n_jobs=n_jobs)
