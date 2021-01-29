@@ -23,7 +23,7 @@ bl = (-2.15,-1.2)
 crop = (-1.2,1.2)
 
 for chan in chans:
-    epo = mne.read_epochs("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref,chan),
+    epo = mne.read_epochs("{}{}grand_{}_finfo-epo.fif".format(proc_dir, epo_pref,chan),
                           preload=True)
     epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,

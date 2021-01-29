@@ -87,6 +87,7 @@ minmax_times = [(0.8, 2), (0.25, 1)]
 osc_types = ["SO", "deltO"]
 includes = []
 amp_thresh_dict = {"Subj":[], "Cond":[], "OscType":[], "Chan":[], "Thresh":[]}
+skipped = []
 
 for filename in filelist:
     this_match = re.match("ibscaf_NAP_(\d{3})_(.*)-raw.fif",filename)
@@ -156,26 +157,32 @@ for filename in filelist:
                 mark_osc_amp(osc_events, amp_thresh, k, minmax_time, osc_type,
                              raw_inst=raw_work)
                 marked_oe = [oe for oe in osc_events if oe.event_id is not None]
-                for moe_idx, moe in enumerate(marked_oe):
-                    if moe_idx == 0:
-                        new_annots = mne.Annotations(moe.start_time,
-                                                     moe.end_time-moe.start_time,
-                                                     "{} {}".format(moe.event_id, moe.event_annot),
-                                                     orig_time=raw_work.annotations.orig_time)
-                    else:
-                        new_annots.append(moe.start_time, moe.end_time-moe.start_time,
-                                          "{} {}".format(moe.event_id, moe.event_annot))
-                    new_annots.append(moe.trough_time, 0,
-                                      "Trough {} {}".format(moe.event_id, moe.event_annot))
-                    new_annots.append(moe.peak_time, 0,
-                                      "Peak {} {}".format(moe.event_id, moe.event_annot))
+                if len(marked_oe):
+                    for moe_idx, moe in enumerate(marked_oe):
+                        if moe_idx == 0:
+                            new_annots = mne.Annotations(moe.start_time,
+                                                         moe.end_time-moe.start_time,
+                                                         "{} {}".format(moe.event_id, moe.event_annot),
+                                                         orig_time=raw_work.annotations.orig_time)
+                        else:
+                            new_annots.append(moe.start_time, moe.end_time-moe.start_time,
+                                              "{} {}".format(moe.event_id, moe.event_annot))
+                        new_annots.append(moe.trough_time, 0,
+                                          "Trough {} {}".format(moe.event_id, moe.event_annot))
+                        new_annots.append(moe.peak_time, 0,
+                                          "Peak {} {}".format(moe.event_id, moe.event_annot))
+                    new_annots.save("{}NAP_{}_{}_{}_{}-annot.fif".format(proc_dir,subj,cond,k,osc_type))
+                    raw.set_annotations(new_annots)
+                else:
+                    skipped.append("{} {} {} {}".format(subj, cond, k, osc_type))
+                    print("\nNo oscillations found. Skipping.\n")
+                    continue
 
-                new_annots.save("{}NAP_{}_{}_{}_{}-annot.fif".format(proc_dir,subj,cond,k,osc_type))
-                raw.set_annotations(new_annots)
                 events = mne.events_from_annotations(raw, check_trough_annot)
-                df_dict = {"Subj":[],"Cond":[],"PrePost":[],"Index":[],"Stim":[],
-                           "PureIndex":[], "OscType":[], "Sync":[]}
-                for event in np.nditer(events[0][:,-1]):
+                df_dict = {"Subj":[],"Cond":[],"StimType":[],"Dur":[],
+                           "PrePost":[],"Index":[],"Stim":[],"PureIndex":[],
+                           "OscType":[], "Sync":[], "OscLen":[],"OscFreq":[]}
+                for event_idx, event in enumerate(np.nditer(events[0][:,-1])):
                     eve = event.copy()
                     if eve >= 100:
                         df_dict["PureIndex"].append(str(eve//100))
@@ -193,14 +200,32 @@ for filename in filelist:
                         df_dict["Sync"].append("async")
                     else:
                         df_dict["Sync"].append("sync")
+
                     df_dict["Cond"].append(cond)
+                    if "eig" in cond:
+                        df_dict["StimType"].append("eig")
+                    elif "fix" in cond:
+                        df_dict["StimType"].append("fix")
+                    elif "sham" in cond:
+                        df_dict["StimType"].append("sham")
+                    if "30s" in cond:
+                        df_dict["Dur"].append("30s")
+                    elif "2m" in cond:
+                        df_dict["Dur"].append("2m")
+                    elif "5m" in cond:
+                        df_dict["Dur"].append("5m")
+
                     if "sham" not in cond:
                         df_dict["Stim"].append("stim")
                     else:
                         df_dict["Stim"].append("sham")
                     df_dict["OscType"].append(osc_type)
+
+                    df_dict["OscLen"].append(marked_oe[event_idx].end_time - marked_oe[event_idx].start_time)
+                    df_dict["OscFreq"].append(1/df_dict["OscLen"][-1])
+
                 df = pd.DataFrame.from_dict(df_dict)
-                epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=None,
+                epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=1,
                                  baseline=None, metadata=df, event_repeated="drop").load_data()
                 raw.save("{}NAP_{}_{}_{}_{}-raw.fif".format(proc_dir,subj,cond,k,osc_type),
                          overwrite=True)
