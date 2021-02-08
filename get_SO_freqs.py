@@ -18,7 +18,8 @@ proc_dir = root_dir+"proc/"
 epo = mne.read_epochs(proc_dir+"grand_central-epo.fif", preload=True)
 df = epo.metadata.copy()
 subjs = list(df["Subj"].unique())
-stim_freqs = pd.Series(np.empty(len(df)))
+stim_freqs = np.empty(len(df))
+osc_devs = np.empty(len(df))
 
 graph_df = {"Subj":[],"Cond":[], "OscFreq":[]}
 
@@ -35,13 +36,18 @@ for subj in subjs:
     inds = np.array(((df["Subj"] == subj) & (df["StimType"]=='sham')))
     stim_freqs[inds] = np.nan
 
+    inds = np.array(((df["Subj"] == subj) & (df["OscType"]=='SO')))
+    osc_devs[inds] = df.iloc[inds]["OscFreq"] - df.iloc[inds]["OscFreq"].mean()
+    inds = np.array(((df["Subj"] == subj) & (df["OscType"]=='deltO')))
+    osc_devs[inds] = df.iloc[inds]["OscFreq"] - df.iloc[inds]["OscFreq"].mean()
+
     graph_df["Subj"].append(subj)
     graph_df["Cond"].append("Stimulated")
     graph_df["OscFreq"].append(eig_freq)
 
-df["StimFreq"] = stim_freqs.values
+df["StimFreq"] = stim_freqs
 df["OscStimDiff"] = df["OscFreq"] - df["StimFreq"]
-df["OscDev"] = df["OscFreq"] - df["OscFreq"].mean()
+df["OscDevs"] = osc_devs
 epo.metadata = df
 epo.save(proc_dir+"grand_central_finfo-epo.fif", overwrite=True)
 

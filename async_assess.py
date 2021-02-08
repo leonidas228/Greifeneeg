@@ -114,7 +114,7 @@ for dur in durs:
                 fmax_list.extend(list(np.ones(len(epo))*fmax))
                 subid_list.extend(["{}_{}".format(this_subj,this_cond) for x in range(len(epo))])
 
-                lr_raw.save("{}lr_bad_caf_NAP_{}_{}-raw.fif".format(proc_dir, this_subj, this_cond))
+                lr_raw.save("{}lr_bad_caf_NAP_{}_{}-raw.fif".format(proc_dir, this_subj, this_cond), overwrite=True)
 
         phase_array = np.vstack(phase_list)
         power_array = np.vstack(power_list)

@@ -34,16 +34,16 @@ baseline = "zscore"
 osc = "SO"
 durs = ["30s","2m","5m"]
 syncs = ["async", "sync"]
-syncs = ["async"]
-conds = ["sham","fix","eig"]
+syncs = ["sync"]
+conds = ["sham","eig","fix"]
 balance_conds = False
-vmin, vmax = -3, 3
+vmin, vmax = -2.5, 2.5
 sync_titles = {"async":"non-synchronised", "sync":"synchronised",
                "all":"all subjects"}
 toi = .26
 foi = 15
-toi = None
-foi = None
+# toi = None
+# foi = None
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
 tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
@@ -63,6 +63,8 @@ if toi != None and foi != None:
     mask[...,foi_idx,toi_idx] = 1
 
 for sync in syncs:
+    tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
+    tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
     avg_fig, avg_axes = plt.subplots(3, 3, figsize=(38.4, 21.6))
     std_fig, std_axes = plt.subplots(3, 3, figsize=(38.4, 21.6))
     hist_data = {"Subj":[], "Cond":[], "TFR":[], "Dur":[]}

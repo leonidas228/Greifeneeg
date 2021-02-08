@@ -43,7 +43,7 @@ baseline = "zscore"
 osc = "SO"
 durs = ["30s","2m","5m"]
 sync_facts = ["syncfact", "nosyncfact"]
-sync_facts = ["nosyncfact"]
+#sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
 #use_groups = ["nogroup"]
 balance_conds = False
@@ -51,10 +51,10 @@ bootstrap = True
 use_badsubjs = {"all_subj":[]}
 # use_badsubjs = {"bad10":["054","027","045","002","044","046","028","009","015","003"]}
 # use_badsubjs = {"bad7":["054","027","045","002","028","009","003"]}
-use_badsubjs = {"sync":['002','003','005','006','007','009','013','015','016',
-                        '017','018','021','022','024','025','026','027','028']}
-use_badsubjs = {"async":['031','033','035','037','038','043','044','045','046',
-                        '047','048','050','051','053','054']}
+# use_badsubjs = {"sync":['002','003','005','006','007','009','013','015','016',
+#                         '017','018','021','022','024','025','026','027','028']}
+# use_badsubjs = {"async":['031','033','035','037','038','043','044','045','046',
+#                         '047','048','050','051','053','054']}
 
 for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:
@@ -71,28 +71,13 @@ for bs_name, bad_subjs in use_badsubjs.items():
                 data *= 1e+12
             df = tfr.metadata.copy()
             df["Brain"] = np.zeros(len(df),dtype=np.float64)
-            df["Stimtype"] = None
-            df["Dur"] = None
-
-            inds = (df["Cond"]=="eig30s") | (df["Cond"]=="eig2m") | (df["Cond"]=="eig5m")
-            df["Stimtype"].iloc[inds] = "eig"
-            inds = (df["Cond"]=="fix30s") | (df["Cond"]=="fix2m") | (df["Cond"]=="fix5m")
-            df["Stimtype"].iloc[inds] = "fix"
-            inds = (df["Cond"]=="sham30s") | (df["Cond"]=="sham2m") | (df["Cond"]=="sham5m")
-            df["Stimtype"].iloc[inds] = "sham"
-            inds = (df["Cond"]=="eig30s") | (df["Cond"]=="fix30s") | (df["Cond"]=="sham30s")
-            df["Dur"].iloc[inds] = "30s"
-            inds = (df["Cond"]=="eig2m") | (df["Cond"]=="fix2m") | (df["Cond"]=="sham2m")
-            df["Dur"].iloc[inds] = "2m"
-            inds = (df["Cond"]=="eig5m") | (df["Cond"]=="fix5m") | (df["Cond"]=="sham5m")
-            df["Dur"].iloc[inds] = "5m"
 
             if sync_fact == "syncfact":
-                formula = "Brain ~ C(Stimtype, Treatment('sham'))*C(Dur, Treatment('30s'))*C(Sync, Treatment('sync'))"
+                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(Sync, Treatment('sync'))"
             else:
-                formula = "Brain ~ C(Stimtype, Treatment('sham'))*C(Dur, Treatment('30s'))"
+                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
             outfile = "{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, sync_fact)
-            groups = df["Subj"] if use_groups == "group" else pd.Series(np.zeros(len(df),dtype=int))
+            groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
             md = smf.mixedlm(formula, df, groups=groups)
             endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
             print(exog_names)
