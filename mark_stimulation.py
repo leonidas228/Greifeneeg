@@ -41,8 +41,8 @@ for filename in filelist:
         subj, tag = this_match.group(1), int(this_match.group(2))
         if tag < 2: # skip the first two non-stim recordings
             continue
-        if subj != "054":
-            continue
+        # if subj != "054":
+        #     continue
         ur_raw = mne.io.Raw(proc_dir+filename,preload=True)
         raw = ur_raw.copy()
         psds, freqs = psd_multitaper(raw, fmax=2, picks=picks, n_jobs=n_jobs)
@@ -110,7 +110,7 @@ for filename in filelist:
                     end = raw.times[idx] + post_stim_buffer
                     duration = end - begin
                     if stim_idx == 0:
-                        pre_dur = analy_duration
+                        pre_dur = analy_duration * 4
                         post_dur = between_duration
                     else:
                         pre_dur = between_duration

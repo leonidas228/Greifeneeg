@@ -34,6 +34,12 @@ for chan in chans:
     power_mean.crop(tmin=crop[0],tmax=crop[1])
     power_mean.save("{}{}grand_{}_mean-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
 
+    power_log = power.copy()
+    power_log.data = np.log10(power_log.data)
+    power_log = power_log.apply_baseline((bl[0],bl[1]), mode="mean")
+    power_log.crop(tmin=crop[0],tmax=crop[1])
+    power_log.save("{}{}grand_{}_logmean-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)
+
     power_z = power.copy().apply_baseline((bl[0],bl[1]), mode="zscore")
     power_z.crop(tmin=crop[0],tmax=crop[1])
     power_z.save("{}{}grand_{}_zscore-tfr.h5".format(proc_dir, epo_pref, chan), overwrite=True)

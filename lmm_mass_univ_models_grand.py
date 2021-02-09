@@ -23,7 +23,7 @@ def mass_uv_lmm(data, endog, exog, groups):
         endog = dat[:, pnt_idx]
         this_mod = MixedLM(endog, exog, groups)
         try:
-            fits.append(this_mod.fit(reml=False))
+            fits.append(this_mod.fit(reml=True))
         except:
             print("\nCoudn't fit model.\n")
             fits.append(None)
@@ -43,9 +43,9 @@ baseline = "zscore"
 osc = "SO"
 durs = ["30s","2m","5m"]
 sync_facts = ["syncfact", "nosyncfact"]
-#sync_facts = ["nosyncfact"]
+sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
-#use_groups = ["nogroup"]
+use_groups = ["nogroup"]
 balance_conds = False
 bootstrap = True
 use_badsubjs = {"all_subj":[]}
@@ -60,7 +60,8 @@ for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:
         for sync_fact in sync_facts:
             tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
-            tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
+            tfr = tfr["OscType=='{}'".format(osc)]
+            #tfr = tfr["PrePost=='Post'"]
             subjs = np.unique(tfr.metadata["Subj"].values)
             # remove all subjects with missing conditions or not meeting synchronicity criterion
             for bs in bad_subjs:
@@ -73,9 +74,9 @@ for bs_name, bad_subjs in use_badsubjs.items():
             df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
             if sync_fact == "syncfact":
-                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(Sync, Treatment('sync'))"
+                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(PrePost, Treatment('Pre'))*C(Sync, Treatment('sync'))"
             else:
-                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
+                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(PrePost, Treatment('Pre'))"
             outfile = "{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, sync_fact)
             groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
             md = smf.mixedlm(formula, df, groups=groups)

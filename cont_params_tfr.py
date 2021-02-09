@@ -25,11 +25,12 @@ proc_dir = root_dir+"proc/"
 group_slope = True
 cont_var = "OscFreq"
 vmin, vmax = -2.5, 2.5
+vmin, vmax = -0.3, 0.3
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
 oscs = ["SO", "deltO"]
 oscs = ["SO"]
-baseline = "zscore"
+baseline = "logmean"
 sync_facts = ["syncfact", "nosyncfact"]
 sync_facts = ["syncfact"]
 use_groups = ["group", "nogroup"]
@@ -40,7 +41,7 @@ use_badsubjs = ["all_subj"]
 #use_badsubjs = ["bad10"]
 #use_badsubjs = ["async"]
 
-toi = .26
+toi = .3
 foi = 15
 # toi = None
 # foi = None
@@ -111,14 +112,38 @@ for osc in oscs:
                        mask_style="contour")
             plt.title(en)
 
-            fig, axes = plt.subplots(5, 7, figsize=(38.4,21.6))
-            axes = [ax for axe in axes for ax in axe]
-            subjs = list(np.unique(moi.model.groups))
-            subjs.sort()
-            for ax, subj in zip(axes, subjs):
-                inds = moi.model.groups==subj
-                sns.scatterplot(x=moi.model.exog[inds,1], y=moi.model.endog[inds], ax=ax)
-                ax.set_ylim((-2.5,5))
-                z = np.polyfit(moi.model.exog[inds,1], moi.model.endog[inds], 1)
+            if cont_var == "OscFreq":
+                plt.figure()
+                sns.scatterplot(x=moi.model.exog[:,1], y=moi.model.endog)
+                z = np.polyfit(moi.model.exog[:,1], moi.model.endog, 1)
                 p = np.poly1d(z)
-                plt.plot(moi.model.exog[inds,1], p(moi.model.exog[inds,1]))
+                plt.plot(moi.model.exog[:,1], p(moi.model.exog[:,1]))
+
+                fig, axes = plt.subplots(5, 7, figsize=(38.4,21.6))
+                axes = [ax for axe in axes for ax in axe]
+                subjs = list(np.unique(moi.model.groups))
+                subjs.sort()
+                for ax, subj in zip(axes, subjs):
+                    inds = moi.model.groups==subj
+                    sns.scatterplot(x=moi.model.exog[inds,1], y=moi.model.endog[inds], ax=ax)
+                    ax.set_ylim((-2.5,2.5))
+                    z = np.polyfit(moi.model.exog[inds,1], moi.model.endog[inds], 1)
+                    p = np.poly1d(z)
+                    ax.plot(moi.model.exog[inds,1], p(moi.model.exog[inds,1]))
+            elif cont_var == "StimFreq":
+                plt.figure()
+                sns.scatterplot(x=moi.model.exog[:,1], y=moi.model.endog)
+
+                subjs = list(np.unique(moi.model.groups))
+                subjs.sort()
+                subj_avgs = []
+                subj_freqs = []
+                for subj in subjs:
+                    inds = moi.model.groups==subj
+                    subj_avgs.append(moi.model.endog[inds].mean())
+                    subj_freqs.append(moi.model.exog[inds,1].mean())
+                plt.figure()
+                sns.scatterplot(x=subj_freqs, y=subj_avgs)
+                z = np.polyfit(subj_freqs, subj_avgs, 1)
+                p = np.poly1d(z)
+                plt.plot(subj_freqs, p(subj_avgs))

@@ -38,13 +38,13 @@ elif isdir("/home/jeffhanna/"):
 proc_dir = root_dir+"proc/"
 
 stim_type = "eig"
-stim_type = None
+stim_type = "sham"
 cont_var = "OscFreq"
 
 group_slope = True
 n_jobs = 8
 chan = "central"
-baseline = "zscore"
+baseline = "logmean"
 osc = "SO"
 durs = ["30s","2m","5m"]
 sync_facts = ["syncfact", "nosyncfact"]

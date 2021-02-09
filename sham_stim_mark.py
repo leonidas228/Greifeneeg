@@ -43,7 +43,7 @@ for filename in filelist:
         for stim_idx in range(stim_nums):
             if post_only:
                 if not stim_idx:
-                    raw.annotations.append(this_start_time-analy_time, analy_time,
+                    raw.annotations.append(this_start_time-analy_time, analy_time*4,
                                            "Pre_Stimulation {}".format(stim_idx))
                 raw.annotations.append(this_start_time, stim_time,
                                        "BAD_Stimulation {}".format(stim_idx))
