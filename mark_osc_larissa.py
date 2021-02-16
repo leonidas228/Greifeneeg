@@ -98,6 +98,13 @@ for filename in filelist:
         if len(includes) and "{}_{}".format(subj,cond) not in includes:
             continue
         raw = mne.io.Raw(proc_dir+filename,preload=True)
+
+        # crop at certain time
+        for annot in raw.annotations:
+            if annot["description"] == "Post_Stimulation 0":
+                break
+        raw.crop(tmin=(annot["onset"] - raw.first_samp / raw.info["sfreq"]))
+
         # produce channel-ROI averages
         for k,v in chan_groups.items():
             raw_pick = raw.copy().pick_channels(v)
@@ -111,6 +118,7 @@ for filename in filelist:
             raw_work = raw.copy()
             raw_work.filter(l_freq=minmax_freq[0], h_freq=minmax_freq[1])
             first_time = raw_work.first_samp / raw_work.info["sfreq"]
+
 
             # zero crossings
             for k in chan_groups.keys():

@@ -33,6 +33,8 @@ for chan in chans:
                 if chan != ort or ot != osc_type:
                     continue
                 epo = mne.read_epochs(proc_dir+filename)
+                if len(epo["PrePost=='Pre'"]):
+                    continue
                 max_ind = epo.metadata["Index"].max()
                 max_ind = 4 if max_ind > 4 else max_ind
                 if max_ind < 2:
@@ -78,6 +80,12 @@ for chan in chans:
     temp = (df["Subj"]=="044").values & (df["Cond"]=="eig5m").values
     drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
     temp = (df["Subj"]=="053").values & (df["Cond"]=="eig5m").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+
+    # bad subjects
+    temp = (df["Subj"]=="028").values
+    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    temp = (df["Subj"]=="045").values
     drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
 
     grand_epo.drop(np.array(drop_inds))

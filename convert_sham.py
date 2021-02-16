@@ -53,7 +53,7 @@ for dur in dur_key.keys():
                         these_annotations.append(onset, duration,
                                                  "BAD_Stimulation {}".format(stim_idx))
                         if stim_idx == 0:
-                            these_annotations.append(onset - analy_time*4, analy_time*4,
+                            these_annotations.append(onset - analy_time, analy_time,
                                                      "Pre_Stimulation {}".format(stim_idx))
                         these_annotations.append(onset + duration, analy_time,
                                                  "Post_Stimulation {}".format(stim_idx))

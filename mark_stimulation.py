@@ -110,7 +110,7 @@ for filename in filelist:
                     end = raw.times[idx] + post_stim_buffer
                     duration = end - begin
                     if stim_idx == 0:
-                        pre_dur = analy_duration * 4
+                        pre_dur = analy_duration
                         post_dur = between_duration
                     else:
                         pre_dur = between_duration

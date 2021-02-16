@@ -33,56 +33,72 @@ cond_keys = {"Intercept":"",
              "C(StimType, Treatment('sham'))[T.fix]:C(Dur, Treatment('30s'))[T.5m]":"Fixed frequency 5m"
             }
 
-cond_exogs =   {"Sham 30s synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)"],
-                "Eigenfrequency 30s synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Eigenfrequency"],
-                "Fixed frequency 30s synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency"],
-                "Sham 2m synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m"],
-                "Eigenfrequency 2m synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
-                "Fixed frequency 2m synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Fixed frequency", "Fixed frequency 2m"],
-                "Sham 5m synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m"],
-                "Eigenfrequency 5m synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
-                "Fixed frequency 5m synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "Fixed frequency 5m"],
-                "Sham 30s non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "non-synchronised"],
-                "Eigenfrequency 30s non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Eigenfrequency", "non-synchronised", "Eigenfrequency non-synchronised"],
-                "Fixed frequency 30s non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "non-synchronised", "Fixed frequency non-synchronised"],
-                "Sham 2m non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "non-synchronised"],
-                "Eigenfrequency 2m non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Eigenfrequency", "Eigenfrequency 2m", "non-synchronised", "Eigenfrequency non-synchronised", "Eigenfrequency 2m non-synchronised"],
-                "Fixed frequency 2m non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Fixed frequency", "Fixed frequency 2m", "non-synchronised", "Fixed frequency non-synchronised", "Fixed frequency 2m non-synchronised"],
-                "Sham 5m non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "non-synchronised"],
-                "Eigenfrequency 5m non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Eigenfrequency", "Eigenfrequency 5m", "non-synchronised", "Eigenfrequency non-synchronised", "Eigenfrequency 5m non-synchronised"],
-                "Fixed frequency 5m non-synchronised pre-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "Fixed frequency 5m", "non-synchronised", "Fixed frequency non-synchronised", "Fixed frequency 5m non-synchronised"],
+cond_exogs =   {"Sham 30s":["Intercept (sham30s)"],
+                "Eigenfrequency 30s":["Intercept (sham30s)", "Eigenfrequency"],
+                "Fixed frequency 30s":["Intercept (sham30s)", "Fixed frequency"],
+                "Sham 2m":["Intercept (sham30s)", "2m"],
+                "Eigenfrequency 2m":["Intercept (sham30s)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
+                "Fixed frequency 2m":["Intercept (sham30s)", "2m", "Fixed frequency", "Fixed frequency 2m"],
+                "Sham 5m":["Intercept (sham30s)", "5m"],
+                "Eigenfrequency 5m":["Intercept (sham30s)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
+                "Fixed frequency 5m":["Intercept (sham30s)", "5m", "Fixed frequency", "Fixed frequency 5m"]}
 
-                "Sham 30s synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Post-stimulation"],
-                "Eigenfrequency 30s synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Eigenfrequency", "Post-stimulation", "Eigenfrequency Post-stimulation"],
-                "Fixed frequency 30s synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "Post-stimulation", "Fixed frequency Post-stimulation"],
-                "Sham 2m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Post-stimulation", "2m Post-stimulation"],
-                "Eigenfrequency 2m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Eigenfrequency", "Eigenfrequency 2m", "Post-stimulation", "Eigenfrequency Post-stimulation", "2m Post-stimulation", "Eigenfrequency 2m Post-stimulation"],
-                "Fixed frequency 2m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Fixed frequency", "Fixed frequency 2m", "Post-stimulation", "Fixed frequency Post-stimulation", "2m Post-stimulation", "Fixed frequency 2m Post-stimulation"],
-                "Sham 5m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Post-stimulation", "5m Post-stimulation"],
-                "Eigenfrequency 5m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Eigenfrequency", "Eigenfrequency 5m", "Post-stimulation", "Eigenfrequency Post-stimulation", "5m Post-stimulation", "Eigenfrequency 5m Post-stimulation"],
-                "Fixed frequency 5m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "Fixed frequency 5m", "Post-stimulation", "Fixed frequency Post-stimulation", "5m Post-stimulation", "Fixed frequency 5m Post-stimulation"],
-                "Sham 30s non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "non-synchronised", "Post-stimulation", "Post-stimulation non-synchronised"],
-                "Eigenfrequency 30s non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Eigenfrequency", "non-synchronised", "Eigenfrequency non-synchronised", "Post-stimulation", "Eigenfrequency Post-stimulation", "Post-stimulation non-synchronised", "Eigenfrequency Post-stimulation non-synchronised"],
-                "Fixed frequency 30s non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "non-synchronised", "Fixed frequency non-synchronised", "Post-stimulation", "Fixed frequency Post-stimulation", "Post-stimulation non-synchronised", "Fixed frequency Post-stimulation non-synchronised"],
-                "Sham 2m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "non-synchronised", "Post-stimulation non-synchronised", "2m non-synchronised", "2m Post-stimulation non-synchronised"],
-                "Eigenfrequency 2m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Eigenfrequency", "Eigenfrequency 2m", "non-synchronised", "Eigenfrequency non-synchronised", "Eigenfrequency 2m non-synchronised", "Post-stimulation", "2m Post-stimulation", "Eigenfrequency Post-stimulation", "Eigenfrequency 2m Post-stimulation", "Post-stimulation non-synchronised", "Eigenfrequency Post-stimulation non-synchronised", "Eigenfrequency 2m Post-stimulation non-synchronised", "2m non-synchronised", "2m Post-stimulation non-synchronised"],
-                "Fixed frequency 2m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Fixed frequency", "Fixed frequency 2m", "non-synchronised", "Fixed frequency non-synchronised", "Fixed frequency 2m non-synchronised", "Post-stimulation", "2m Post-stimulation", "Fixed frequency Post-stimulation", "Fixed frequency 2m Post-stimulation", "Post-stimulation non-synchronised", "Fixed frequency Post-stimulation non-synchronised", "Fixed frequency 2m Post-stimulation non-synchronised", "2m non-synchronised", "2m Post-stimulation non-synchronised"],
-                "Sham 5m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "non-synchronised", "Post-stimulation", "5m Post-stimulation", "Post-stimulation non-synchronised"],
-                "Eigenfrequency 5m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Eigenfrequency", "Eigenfrequency 5m", "non-synchronised", "Eigenfrequency non-synchronised", "Eigenfrequency 5m non-synchronised", "Post-stimulation", "5m Post-stimulation", "Eigenfrequency Post-stimulation", "Eigenfrequency 5m Post-stimulation", "Post-stimulation non-synchronised", "Eigenfrequency Post-stimulation non-synchronised", "Eigenfrequency 5m Post-stimulation non-synchronised", "5m non-synchronised", "5m Post-stimulation non-synchronised"],
-                "Fixed frequency 5m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Fixed frequency", "Fixed frequency 5m", "non-synchronised", "Fixed frequency non-synchronised", "Fixed frequency 5m non-synchronised", "Post-stimulation", "5m Post-stimulation", "Fixed frequency Post-stimulation", "Fixed frequency 5m Post-stimulation", "Post-stimulation non-synchronised", "Fixed frequency Post-stimulation non-synchronised", "Fixed frequency 5m Post-stimulation non-synchronised", "5m non-synchronised", "5m Post-stimulation non-synchronised"]
+cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronised)"],
+                "Eigenfrequency 30s synchronised":["Intercept (sham30s synchronised)", "Eigenfrequency"],
+                "Fixed frequency 30s synchronised":["Intercept (sham30s synchronised)", "Fixed frequency"],
+                "Sham 2m synchronised":["Intercept (sham30s synchronised)", "2m"],
+                "Eigenfrequency 2m synchronised":["Intercept (sham30s synchronised)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
+                "Fixed frequency 2m synchronised":["Intercept (sham30s synchronised)", "2m", "Fixed frequency", "Fixed frequency 2m"],
+                "Sham 5m synchronised":["Intercept (sham30s synchronised)", "5m"],
+                "Eigenfrequency 5m synchronised":["Intercept (sham30s synchronised)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
+                "Fixed frequency 5m synchronised":["Intercept (sham30s synchronised)", "5m", "Fixed frequency", "Fixed frequency 5m"],
+
+                "Sham 30s non-synchronised":["Intercept (sham30s synchronised)", "non-synchronised"],
+                "Eigenfrequency 30s non-synchronised":["Intercept (sham30s synchronised)", "Eigenfrequency", "non-synchronised", "Eigenfrequency non-synchronised"],
+                "Fixed frequency 30s non-synchronised":["Intercept (sham30s synchronised)", "Fixed frequency", "non-synchronised", "Fixed frequency non-synchronised"],
+                "Sham 2m non-synchronised":["Intercept (sham30s synchronised)", "2m", "non-synchronised", "2m non-synchronised"],
+                "Eigenfrequency 2m non-synchronised":["Intercept (sham30s synchronised)", "2m", "Eigenfrequency", "non-synchronised", "2m non-synchronised", "Eigenfrequency 2m", "Eigenfrequency non-synchronised", "Eigenfrequency 2m non-synchronised"],
+                "Fixed frequency 2m non-synchronised":["Intercept (sham30s synchronised)", "2m", "Fixed frequency", "non-synchronised", "2m non-synchronised", "Fixed frequency 2m", "Fixed frequency non-synchronised", "Fixed frequency 2m non-synchronised"],
+                "Sham 5m non-synchronised":["Intercept (sham30s synchronised)", "5m", "non-synchronised", "5m non-synchronised"],
+                "Eigenfrequency 5m non-synchronised":["Intercept (sham30s synchronised)", "5m", "Eigenfrequency", "non-synchronised", "5m non-synchronised", "Eigenfrequency 5m", "Eigenfrequency non-synchronised", "Eigenfrequency 5m non-synchronised"],
+                "Fixed frequency 5m non-synchronised":["Intercept (sham30s synchronised)", "5m", "Fixed frequency", "non-synchronised", "5m non-synchronised", "Fixed frequency 5m", "Fixed frequency non-synchronised", "Fixed frequency 5m non-synchronised"],
+
+                # "Sham 30s synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Post-stimulation"],
+                # "Eigenfrequency 30s synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Eigenfrequency", "Post-stimulation", "Eigenfrequency Post-stimulation"],
+                # "Fixed frequency 30s synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "Post-stimulation", "Fixed frequency Post-stimulation"],
+                # "Sham 2m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Post-stimulation", "2m Post-stimulation"],
+                # "Eigenfrequency 2m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Eigenfrequency", "Post-stimulation", "Eigenfrequency 2m",  "Eigenfrequency Post-stimulation", "2m Post-stimulation", "Eigenfrequency 2m Post-stimulation"],
+                # "Fixed frequency 2m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Fixed frequency", "Post-stimulation", "Fixed frequency 2m",  "Fixed frequency Post-stimulation", "2m Post-stimulation", "Fixed frequency 2m Post-stimulation"],
+                # "Sham 5m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Post-stimulation", "5m Post-stimulation"],
+                # "Eigenfrequency 5m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Eigenfrequency", "Post-stimulation", "Eigenfrequency 5m",  "Eigenfrequency Post-stimulation", "5m Post-stimulation", "Eigenfrequency 5m Post-stimulation"],
+                # "Fixed frequency 5m synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Fixed frequency", "Post-stimulation", "Fixed frequency 5m",  "Fixed frequency Post-stimulation", "5m Post-stimulation", "Fixed frequency 5m Post-stimulation"],
+                #
+                # "Sham 30s non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "non-synchronised", "Post-stimulation", "Post-stimulation non-synchronised"],
+                # "Eigenfrequency 30s non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Eigenfrequency", "non-synchronised", "Post-stimulation", "Eigenfrequency non-synchronised", "Eigenfrequency Post-stimulation", "Post-stimulation non-synchronised", "Eigenfrequency Post-stimulation non-synchronised"],
+                # "Fixed frequency 30s non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "Fixed frequency", "non-synchronised", "Post-stimulation", "Fixed frequency non-synchronised",  "Fixed frequency Post-stimulation", "Post-stimulation non-synchronised", "Fixed frequency Post-stimulation non-synchronised"],
+                # "Sham 2m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Post-stimulation", "non-synchronised", "2m Post-stimulation", "Post-stimulation non-synchronised", "2m non-synchronised", "2m Post-stimulation non-synchronised"],
+                # "Eigenfrequency 2m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Eigenfrequency", "non-synchronised", "Post-stimulation", "Eigenfrequency 2m", "Eigenfrequency Post-stimulation", "Eigenfrequency non-synchronised", "2m Post-stimulation", "2m non-synchronised", "Post-stimulation non-synchronised", "Eigenfrequency 2m Post-stimulation", "Eigenfrequency 2m non-synchronised", "Eigenfrequency Post-stimulation non-synchronised","2m Post-stimulation non-synchronised", "Eigenfrequency 2m Post-stimulation non-synchronised"],
+                # "Fixed frequency 2m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "2m", "Fixed frequency", "non-synchronised", "Post-stimulation", "Fixed frequency 2m", "Fixed frequency Post-stimulation", "Fixed frequency non-synchronised", "2m Post-stimulation", "2m non-synchronised", "Post-stimulation non-synchronised", "Fixed frequency 2m Post-stimulation", "Fixed frequency 2m non-synchronised", "Fixed frequency Post-stimulation non-synchronised","2m Post-stimulation non-synchronised", "Fixed frequency 2m Post-stimulation non-synchronised"],
+                # "Sham 5m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Post-stimulation", "non-synchronised", "5m Post-stimulation", "5m non-synchronised", "Post-stimulation non-synchronised", "5m Post-stimulation non-synchronised"],
+                # "Eigenfrequency 5m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Eigenfrequency", "non-synchronised", "Post-stimulation", "Eigenfrequency 5m", "Eigenfrequency Post-stimulation", "Eigenfrequency non-synchronised", "5m Post-stimulation", "5m non-synchronised", "Post-stimulation non-synchronised", "Eigenfrequency 5m Post-stimulation", "Eigenfrequency 5m non-synchronised", "Eigenfrequency Post-stimulation non-synchronised","5m Post-stimulation non-synchronised", "Eigenfrequency 5m Post-stimulation non-synchronised"],
+                # "Fixed frequency 5m non-synchronised post-stimulation":["Intercept (sham30s synchronised pre-stimulation)", "5m", "Fixed frequency", "non-synchronised", "Post-stimulation", "Fixed frequency 5m", "Fixed frequency Post-stimulation", "Fixed frequency non-synchronised", "5m Post-stimulation", "5m non-synchronised", "Post-stimulation non-synchronised", "Fixed frequency 5m Post-stimulation", "Fixed frequency 5m non-synchronised", "Fixed frequency Post-stimulation non-synchronised","5m Post-stimulation non-synchronised", "Fixed frequency 5m Post-stimulation non-synchronised"]
                 }
 
-vmin, vmax = -2.5, 2.5
-#vmin, vmax = -.35, .35
+
+
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
 osc = "SO"
 baseline = "zscore"
 sync_fact = "syncfact"
 use_group = "nogroup"
-prepost = True
+prepost = False
 balance_conds = False
 badsubjs = "all_subj"
+if baseline == "zscore":
+    vmin, vmax = -2.5, 2.5
+elif baseline == "logmean":
+    vmin, vmax = -.35, .35
 
 if prepost:
     new_cond_keys = {k+":C(PrePost, Treatment('Pre'))[T.Post]":v+" Post-stimulation"
@@ -96,6 +112,7 @@ if sync_fact == "syncfact":
                  for k,v in cond_keys.items() if "Intercept" not in k}
     cond_keys["C(Sync, Treatment('sync'))[T.async]"] = "non-synchronised"
     cond_keys = {**cond_keys, **new_cond_keys}
+    cond_exogs = cond_exogs_syncfact
 
 cond_keys["Intercept"] = "Intercept (sham30s"
 if sync_fact == "syncfact":
@@ -131,7 +148,7 @@ with open("{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline,
     fits = pickle.load(f)
 exog_names = fits["exog_names"]
 modfit = fits["fits"]
-for param_idx in range(0,len(cond_keys),9):
+for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
     fig, axes = plt.subplots(3, 3, figsize=(38.4,21.6))
     axes = [ax for axe in axes for ax in axe]
     for en_idx,en in enumerate(list(cond_keys.keys())[param_idx:param_idx+9]):
@@ -157,18 +174,18 @@ for param_idx in range(0,len(cond_keys),9):
                           linewidth=10)
         axes[en_idx].set_title(cond_keys[en])
 
-    # fig.suptitle("{}_{}_{}_{}".format(osc, bs_name, use_group, sync_fact))
-    # if sync_fact == "syncfact":
-    #     fig.suptitle("LME model parameters of SO spindle power, synchronicity tested")
-    # else:
-    #     fig.suptitle("LME model parameters of SO spindle power, synchronicity not tested")
-    # fig.tight_layout()
-    # fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}.tif".format(osc, bs_name, use_group, sync_fact, order_idx))
+    fig.suptitle("{}_{}_{}_{}".format(osc, badsubjs, use_group, sync_fact))
+    if sync_fact == "syncfact":
+        fig.suptitle("LME model parameters of SO spindle power, synchronicity tested")
+    else:
+        fig.suptitle("LME model parameters of SO spindle power, synchronicity not tested")
+    fig.tight_layout()
+    fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
 
 
 # predictions
 coe_keys = list(cond_exogs.keys())
-for param_idx in range(0,len(cond_exogs.keys()),9):
+for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
     fig, axes = plt.subplots(3, 3, figsize=(38.4,21.6))
     axes = [ax for axe in axes for ax in axe]
     for cond_idx, exog_key in enumerate(coe_keys[param_idx:param_idx+9]):
@@ -184,13 +201,10 @@ for param_idx in range(0,len(cond_exogs.keys()),9):
                             color="gray", alpha=0.8,
                             linewidth=10)
         axes[cond_idx].set_title(exog_key)
-#
-# if sync_fact == "syncfact":
-#     fig0.suptitle("LME model predictions of SO spindle power, synchronicity tested")
-#     fig1.suptitle("LME model predictions of SO spindle power, synchronicity tested")
-#     fig1.tight_layout()
-#     fig1.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_1.tif".format(osc, bs_name, use_group, sync_fact))
-# else:
-#     fig0.suptitle("LME model predictions of SO spindle power, synchronicity not tested")
-# fig0.tight_layout()
-# fig0.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_0.tif".format(osc, bs_name, use_group, sync_fact))
+
+    if sync_fact == "syncfact":
+        fig.suptitle("LME model predictions of SO spindle power, synchronicity tested")
+    else:
+        fig.suptitle("LME model predictions of SO spindle power, synchronicity not tested")
+    fig.tight_layout()
+    fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))

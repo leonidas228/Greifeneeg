@@ -9,7 +9,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s", "sham30s", "sham2m", "sham5m"]
-conds = ["sham30s", "sham2m", "sham5m"]
+#conds = ["sham30s", "sham2m", "sham5m"]
 filelist = listdir(proc_dir)
 excludes = ["031_eig30s", "045_fix5m", "046_eig30s"]
 excludes = []

@@ -39,22 +39,15 @@ proc_dir = root_dir+"proc/"
 
 n_jobs = 8
 chan = "central"
-baseline = "zscore"
+baseline = "logmean"
 osc = "SO"
 durs = ["30s","2m","5m"]
 sync_facts = ["syncfact", "nosyncfact"]
-sync_facts = ["nosyncfact"]
+#sync_facts = ["syncfact"]
 use_groups = ["group", "nogroup"]
 use_groups = ["nogroup"]
-balance_conds = False
-bootstrap = True
 use_badsubjs = {"all_subj":[]}
-# use_badsubjs = {"bad10":["054","027","045","002","044","046","028","009","015","003"]}
-# use_badsubjs = {"bad7":["054","027","045","002","028","009","003"]}
-# use_badsubjs = {"sync":['002','003','005','006','007','009','013','015','016',
-#                         '017','018','021','022','024','025','026','027','028']}
-# use_badsubjs = {"async":['031','033','035','037','038','043','044','045','046',
-#                         '047','048','050','051','053','054']}
+
 
 for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:
@@ -75,8 +68,10 @@ for bs_name, bad_subjs in use_badsubjs.items():
 
             if sync_fact == "syncfact":
                 formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(PrePost, Treatment('Pre'))*C(Sync, Treatment('sync'))"
+                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(Sync, Treatment('sync'))"
             else:
                 formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(PrePost, Treatment('Pre'))"
+                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
             outfile = "{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, sync_fact)
             groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
             md = smf.mixedlm(formula, df, groups=groups)

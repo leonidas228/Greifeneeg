@@ -23,7 +23,7 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir+"proc/"
 
 group_slope = True
-cont_var = "OscFreq"
+cont_var = "StimFreq"
 vmin, vmax = -2.5, 2.5
 vmin, vmax = -0.3, 0.3
 durs = ["30s", "2m", "5m"]
@@ -32,7 +32,7 @@ oscs = ["SO", "deltO"]
 oscs = ["SO"]
 baseline = "logmean"
 sync_facts = ["syncfact", "nosyncfact"]
-sync_facts = ["syncfact"]
+sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
 use_groups = ["group"]
 balance_conds = False
@@ -41,8 +41,10 @@ use_badsubjs = ["all_subj"]
 #use_badsubjs = ["bad10"]
 #use_badsubjs = ["async"]
 
-toi = .3
-foi = 15
+toi = .308
+foi = 13
+# toi = .365
+# foi = 16
 # toi = None
 # foi = None
 
@@ -105,24 +107,35 @@ for osc in oscs:
                                   linewidth=10)
                 axes[en_idx].set_title(en)
             plt.tight_layout()
+            plt.suptitle("Estimated parameters")
             plt.savefig("../images/lmmtfr_{}_{}_{}_cont_{}.tif".format(osc, bs_name, use_group, cont_var))
 
-            tfr_c.plot(picks="central", colorbar=False, vmin=vmin,
-                       vmax=vmax, cmap="viridis", mask=roi_mask,
-                       mask_style="contour")
-            plt.title(en)
-
             if cont_var == "OscFreq":
-                plt.figure()
-                sns.scatterplot(x=moi.model.exog[:,1], y=moi.model.endog)
+                fig, axes = plt.subplots(1,2, figsize=(38.4,21.6))
+                tfr_c.plot(picks="central", colorbar=False, vmin=vmin,
+                           vmax=vmax, cmap="viridis", mask=roi_mask,
+                           mask_style="contour", axes=axes[0])
+                axes[0].set_title(en+" Time-Frequency of interest")
+                axes[0].plot(tfr.times, evo_data[0,],
+                            color="gray", alpha=0.8,
+                            linewidth=10)
+
+                sns.scatterplot(x=moi.model.exog[:,1], y=moi.model.endog, ax=axes[1])
                 z = np.polyfit(moi.model.exog[:,1], moi.model.endog, 1)
                 p = np.poly1d(z)
-                plt.plot(moi.model.exog[:,1], p(moi.model.exog[:,1]))
+                axes[1].plot(moi.model.exog[:,1], p(moi.model.exog[:,1]))
+                axes[1].set_ylabel("Log power")
+                axes[1].set_xlabel("SO frequency")
+                axes[1].set_title("Log power*SO frequency at TFOI")
+                plt.suptitle("")
+                plt.savefig("../images/lmmtfr_{}_{}_{}_cont_tfoi_{}.tif".format(osc, bs_name, use_group, cont_var))
 
-                fig, axes = plt.subplots(5, 7, figsize=(38.4,21.6))
+                fig, axes = plt.subplots(5, 6, figsize=(38.4,21.6))
                 axes = [ax for axe in axes for ax in axe]
                 subjs = list(np.unique(moi.model.groups))
                 subjs.sort()
+                for off_ax in axes[len(subjs):]:
+                    off_ax.axis("off")
                 for ax, subj in zip(axes, subjs):
                     inds = moi.model.groups==subj
                     sns.scatterplot(x=moi.model.exog[inds,1], y=moi.model.endog[inds], ax=ax)
@@ -130,9 +143,27 @@ for osc in oscs:
                     z = np.polyfit(moi.model.exog[inds,1], moi.model.endog[inds], 1)
                     p = np.poly1d(z)
                     ax.plot(moi.model.exog[inds,1], p(moi.model.exog[inds,1]))
+                    ax.set_title(subj)
+                plt.tight_layout()
+                plt.savefig("../images/lmmtfr_{}_{}_{}_cont_tfoisubj_{}.tif".format(osc, bs_name, use_group, cont_var))
+
             elif cont_var == "StimFreq":
-                plt.figure()
-                sns.scatterplot(x=moi.model.exog[:,1], y=moi.model.endog)
+                fig, axes = plt.subplots(1,3, figsize=(38.4,21.6))
+                tfr_c.plot(picks="central", colorbar=False, vmin=vmin,
+                           vmax=vmax, cmap="viridis", mask=roi_mask,
+                           mask_style="contour", axes=axes[0])
+                axes[0].set_title(en+" Time-Frequency of interest")
+                axes[0].plot(tfr.times, evo_data[0,],
+                            color="gray", alpha=0.8,
+                            linewidth=10)
+
+                sns.scatterplot(x=moi.model.exog[:,1], y=moi.model.endog, ax=axes[1])
+                z = np.polyfit(moi.model.exog[:,1], moi.model.endog, 1)
+                p = np.poly1d(z)
+                axes[1].plot(moi.model.exog[:,1], p(moi.model.exog[:,1]))
+                axes[1].set_ylabel("Log power")
+                axes[1].set_xlabel("SO frequency")
+                axes[1].set_title("Log power*Stim frequency at TFOI")
 
                 subjs = list(np.unique(moi.model.groups))
                 subjs.sort()
@@ -142,8 +173,15 @@ for osc in oscs:
                     inds = moi.model.groups==subj
                     subj_avgs.append(moi.model.endog[inds].mean())
                     subj_freqs.append(moi.model.exog[inds,1].mean())
-                plt.figure()
-                sns.scatterplot(x=subj_freqs, y=subj_avgs)
+                sns.scatterplot(x=subj_freqs, y=subj_avgs, ax=axes[2])
                 z = np.polyfit(subj_freqs, subj_avgs, 1)
                 p = np.poly1d(z)
-                plt.plot(subj_freqs, p(subj_avgs))
+                axes[2].plot(subj_freqs, p(subj_freqs))
+                axes[2].set_ylabel("Log power")
+                axes[2].set_xlabel("SO frequency")
+                axes[2].set_title("Log power*Stim frequency at TFOI, Subject average")
+
+                plt.suptitle("")
+                plt.savefig("../images/lmmtfr_{}_{}_{}_cont_tfoisubj_{}.tif".format(osc, bs_name, use_group, cont_var))
+
+                plt.tight_layout()
