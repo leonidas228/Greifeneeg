@@ -88,7 +88,7 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
-osc = "SO"
+osc = "deltO"
 baseline = "zscore"
 sync_fact = "syncfact"
 use_group = "nogroup"
@@ -130,6 +130,9 @@ epo = mne.read_epochs(proc_dir+"grand_central-epo.fif")
 e = epo["OscType=='{}'".format(osc)]
 e.resample(tfr.info["sfreq"], n_jobs="cuda")
 e.crop(tmin=tfr.times[0], tmax=tfr.times[-1])
+if osc == "deltO":
+    tfr_avg.crop(tmin=-0.75, tmax=0.75)
+    epo.crop(tmin=-0.75, tmax=0.75)
 # calculate global ERP min and max for scaling later on
 evo = e.average()
 ev_min, ev_max = evo.data.min(), evo.data.max()
@@ -137,6 +140,7 @@ ev_min, ev_max = evo.data.min(), evo.data.max()
 evo_data = evo.data
 evo_data = (evo_data - ev_min) / (ev_max - ev_min)
 evo_data = evo_data*4 + 12
+
 
 stat_conds = list(cond_keys.keys())
 tfr_c = tfr_avg.copy()

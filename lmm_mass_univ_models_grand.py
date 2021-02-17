@@ -39,9 +39,8 @@ proc_dir = root_dir+"proc/"
 
 n_jobs = 8
 chan = "central"
-baseline = "logmean"
-osc = "SO"
-durs = ["30s","2m","5m"]
+baseline = "zscore"
+osc = "deltO"
 sync_facts = ["syncfact", "nosyncfact"]
 #sync_facts = ["syncfact"]
 use_groups = ["group", "nogroup"]
@@ -54,7 +53,9 @@ for bs_name, bad_subjs in use_badsubjs.items():
         for sync_fact in sync_facts:
             tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
             tfr = tfr["OscType=='{}'".format(osc)]
-            #tfr = tfr["PrePost=='Post'"]
+            if osc == "deltO":
+                tfr.crop(tmin=-0.75, tmax=0.75)
+            tfr = tfr["PrePost=='Post'"]
             subjs = np.unique(tfr.metadata["Subj"].values)
             # remove all subjects with missing conditions or not meeting synchronicity criterion
             for bs in bad_subjs:
@@ -67,10 +68,8 @@ for bs_name, bad_subjs in use_badsubjs.items():
             df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
             if sync_fact == "syncfact":
-                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(PrePost, Treatment('Pre'))*C(Sync, Treatment('sync'))"
                 formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(Sync, Treatment('sync'))"
             else:
-                formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(PrePost, Treatment('Pre'))"
                 formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
             outfile = "{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, sync_fact)
             groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))

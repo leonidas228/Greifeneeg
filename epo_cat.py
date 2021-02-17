@@ -63,8 +63,10 @@ for chan in chans:
 
     # special cases
     drop_inds = np.array([])
+
     temp = (df["Subj"]=="035").values & (df["Cond"]=="eig5m").values & (df["Index"]>=3).values
     drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+
     temp = (df["Subj"]=="033").values & (df["Cond"]=="eig30s").values
     drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
     temp = (df["Subj"]=="044").values & (df["Cond"]=="fix2m").values
@@ -83,10 +85,17 @@ for chan in chans:
     drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
 
     # bad subjects
-    temp = (df["Subj"]=="028").values
-    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
-    temp = (df["Subj"]=="045").values
-    drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    # temp = (df["Subj"]=="028").values
+    # drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    # temp = (df["Subj"]=="045").values
+    # drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    #
+    # temp = (df["Subj"]=="002").values
+    # drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    # temp = (df["Subj"]=="003").values
+    # drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
+    # temp = (df["Subj"]=="027").values
+    # drop_inds = np.hstack((drop_inds, np.where(temp)[0]))
 
     grand_epo.drop(np.array(drop_inds))
 
