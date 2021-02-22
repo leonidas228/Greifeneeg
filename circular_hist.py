@@ -76,4 +76,19 @@ def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, color="blue
     if density:
         ax.set_yticks([])
 
-    return n, bins, patches
+    return n, bins, patches, radius.max()
+
+def circ_hist_norm(ax, x, points=None, vecs=None, bins=16, density=True, offset=0,
+                   gaps=True, color="blue", area_fill=True, alpha=1,
+                   points_col=None):
+    n, bins, patches, r_max = circular_hist(ax, x, bins=bins, density=density,
+                                            offset=offset, gaps=gaps, color=color,
+                                            area_fill=area_fill, alpha=alpha)
+    if points is not None:
+        full_points = np.array([(x, r_max) for x in np.nditer(points)])
+        ax.scatter(full_points[:,0], full_points[:,1], c=points_col)
+    if vecs is not None:
+        for vec in vecs:
+            r = np.arange(0, r_max*vec[0][1], 0.01)
+            theta = np.ones_like(r)*vec[0][0]
+            ax.plot(theta, r, **vec[1])

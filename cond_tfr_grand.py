@@ -180,9 +180,9 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
 
     fig.suptitle("{}_{}_{}_{}".format(osc, badsubjs, use_group, sync_fact))
     if sync_fact == "syncfact":
-        fig.suptitle("LME model parameters of SO spindle power, synchronicity tested")
+        fig.suptitle("LME model parameters of {} spindle power, synchronicity tested".format(osc))
     else:
-        fig.suptitle("LME model parameters of SO spindle power, synchronicity not tested")
+        fig.suptitle("LME model parameters of {} spindle power, synchronicity not tested".format(osc))
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
 
@@ -207,8 +207,8 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
         axes[cond_idx].set_title(exog_key)
 
     if sync_fact == "syncfact":
-        fig.suptitle("LME model predictions of SO spindle power, synchronicity tested")
+        fig.suptitle("LME model predictions of {} spindle power, synchronicity tested".format(osc))
     else:
-        fig.suptitle("LME model predictions of SO spindle power, synchronicity not tested")
+        fig.suptitle("LME model predictions of {} spindle power, synchronicity not tested".format(osc))
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
