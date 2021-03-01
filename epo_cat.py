@@ -14,8 +14,6 @@ conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s","sham30s","sham2m","s
 filelist = listdir(proc_dir)
 chans = ["central"]
 osc_types = ["SO", "deltO"]
-epo_pref = "ak_"
-epo_pref = ""
 
 df_dict = {"Subj":[],"Ort":[],"Cond":[],"OscType":[],"PrePost":[],"Number":[],
            "Index":[], "Stim":[], "Sync":[]}
@@ -23,7 +21,7 @@ for chan in chans:
     epos = []
     for ot in osc_types:
         for filename in filelist:
-            this_match = re.match("d_"+epo_pref+"NAP_(\d{3})_(.*)_(.*)_(.*)-epo.fif", filename)
+            this_match = re.match("d_"+"NAP_(\d{3})_(.*)_(.*)_(.*)-epo.fif", filename)
             if this_match:
                 print(filename)
                 subj, cond = this_match.group(1), this_match.group(2)
@@ -100,6 +98,6 @@ for chan in chans:
     grand_epo.drop(np.array(drop_inds))
 
     grand_epo = grand_epo["Index < 5"]
-    grand_epo.save("{}{}grand_{}-epo.fif".format(proc_dir, epo_pref, chan), overwrite=True)
+    grand_epo.save("{}grand_{}-epo.fif".format(proc_dir, chan), overwrite=True)
 df = pd.DataFrame.from_dict(df_dict)
-df.to_pickle("{}{}grand_df.pickle".format(proc_dir, epo_pref))
+df.to_pickle("{}grand_df.pickle".format(proc_dir))

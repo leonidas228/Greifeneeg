@@ -16,7 +16,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-epo = mne.read_epochs("{}grand_central-epo.fif".format(proc_dir))
+epo = mne.read_epochs("{}grand_central_finfo-epo.fif".format(proc_dir))
 df = epo.metadata.copy()
 df = df.query("PrePost=='Post'")
 subjs = list(df["Subj"].unique())
@@ -54,12 +54,17 @@ plt.ylim((0,40))
 plt.title("Number of deltO")
 plt.savefig("{}deltO_number.tif".format(proc_dir))
 
-fig, axes = plt.subplots(5,6, figsize=(38.4,21.6))
+fig, axes = plt.subplots(6,6, figsize=(38.4,21.6))
 axes = [ax for axe in axes for ax in axe]
-for ax, subj in zip(axes, subjs):
+for idx, (ax, subj) in enumerate(zip(axes, subjs)):
     this_df = total_df.query("Subj=='{}'".format(subj))
     sns.barplot(x="Stim", y="Total", hue="Dur", data=this_df.query("OscType=='SO'"),
                 order=["sham", "fix", "eig"], hue_order=["30s", "2m", "5m"], ax=ax)
-    ax.legend("")
+    ax.get_legend().remove()
+    ax.set_ylim((0,55))
     ax.set_title(subj)
+if idx < len(axes):
+    for idx in range(idx+1,len(axes)):
+        axes[idx].axis("off")
+plt.suptitle("SO by subject")
 plt.tight_layout()

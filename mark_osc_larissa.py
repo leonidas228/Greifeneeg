@@ -69,6 +69,17 @@ def mark_osc_amp(osc_events, amp_thresh, chan_name, mm_times, osc_type,
             oe.event_annot = event_annot
             osc_idx += 1
 
+eig_freqs = {'002': 0.8135739656, '003': 0.8388119505, '005': 0.6697439105,
+             '006': 0.7832908796, '007': 0.7456094526, '009': 0.7788409575,
+             '013': 0.6714744633, '015': 0.8900342154, '016': 0.8195879177,
+             '017': 0.807011053, '018': 0.8468273959, '021': 0.5211960758,
+             '022': 0.5030628337, '024': 0.5370360281, '025': 0.5080682169,
+             '026': 0.511158806, '027': 0.5085371744, '028': 0.6724768668,
+             '031': 0.8641548566, '033': 0.9979009669, '035': 0.6158327557,
+             '037': 0.6919189534, '038': 0.6330339807, '043': 0.6852392211,
+             '044': 0.6559392045, '045': 0.6264749245, '046': 0.6615336116,
+             '047': 0.8233948546, '048': 0.7762510701, '050': 0.6685955766,
+             '051': 0.7523264618, '053': 0.8741048686, '054': 0.6611531633}
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
@@ -189,7 +200,8 @@ for filename in filelist:
                 events = mne.events_from_annotations(raw, check_trough_annot)
                 df_dict = {"Subj":[],"Cond":[],"StimType":[],"Dur":[],
                            "PrePost":[],"Index":[],"Stim":[],"PureIndex":[],
-                           "OscType":[], "Sync":[], "OscLen":[],"OscFreq":[]}
+                           "OscType":[], "Sync":[], "OscLen":[],"OscFreq":[],
+                           "EigFreq":[]}
                 for event_idx, event in enumerate(np.nditer(events[0][:,-1])):
                     eve = event.copy()
                     if eve >= 100:
@@ -204,7 +216,7 @@ for filename in filelist:
                         df_dict["PrePost"].append("Pre")
                     df_dict["Index"].append(int(eve))
                     df_dict["Subj"].append(subj)
-                    if int(subj) < 31:
+                    if int(subj) < 31 and subj != "021" and subj!='017':
                         df_dict["Sync"].append("async")
                     else:
                         df_dict["Sync"].append("sync")
@@ -231,6 +243,7 @@ for filename in filelist:
 
                     df_dict["OscLen"].append(marked_oe[event_idx].end_time - marked_oe[event_idx].start_time)
                     df_dict["OscFreq"].append(1/df_dict["OscLen"][-1])
+                    df_dict["EigFreq"].append(eig_freqs[subj])
 
                 df = pd.DataFrame.from_dict(df_dict)
                 epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=1,

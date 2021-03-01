@@ -14,6 +14,11 @@ plt.ion()
 import warnings
 warnings.filterwarnings("ignore")
 
+'''
+Do a mass-univariate LMM on both a categorical variable and a continous,
+also keep track of AICs to compare which was better.
+
+'''
 def mass_uv_lmm(data, endog, exog, groups, exog_re):
     exog_n = exog.shape[1]
     dat = data.reshape(len(data), data.shape[1]*data.shape[2])
@@ -37,18 +42,20 @@ elif isdir("/home/jeffhanna/"):
     root_dir = "/scratch/jeffhanna/sfb/"
 proc_dir = root_dir+"proc/"
 
-stim_type = "eig"
-stim_type = "sham"
-stim_type = None
+
 cont_var = "EigFreq"
 
-group_slope = False
+group_slope = True
 n_jobs = 8
 chan = "central"
-baseline = "zscore"
+baseline = "logmean"
 osc = "SO"
+sync_facts = ["syncfact", "nosyncfact"]
+sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
-use_groups = ["nogroup"]
+#use_groups = ["group"]
+balance_conds = False
+bootstrap = True
 use_badsubjs = {"all_subj":[]}
 
 for bs_name, bad_subjs in use_badsubjs.items():
@@ -68,7 +75,7 @@ for bs_name, bad_subjs in use_badsubjs.items():
         df = tfr.metadata.copy()
         df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
-        formula = "Brain ~ {}*C(Dur, Treatment('30s'))*C(StimType, Treatment('sham'))".format(cont_var)
+        formula = "Brain ~ {}".format(cont_var)
         outfile = "{}main_fits_{}_{}_{}_{}_cont_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, cont_var)
         re_formula = None
         if group_slope:

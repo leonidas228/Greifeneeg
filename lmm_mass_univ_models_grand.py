@@ -52,6 +52,7 @@ for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:
         for sync_fact in sync_facts:
             tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
+            breakpoint()
             tfr = tfr["OscType=='{}'".format(osc)]
             if osc == "deltO":
                 tfr.crop(tmin=-0.75, tmax=0.75)
