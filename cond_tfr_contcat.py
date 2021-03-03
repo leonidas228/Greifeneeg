@@ -26,16 +26,6 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-cond_keys = {"EigFreq":"EigFreq",
-             "EigFreq:C(StimType, Treatment('sham'))[T.eig]":"Eigenfrequency",
-             "EigFreq:C(StimType, Treatment('sham'))[T.fix]":"Fixed frequency",
-             "EigFreq:C(Dur, Treatment('30s'))[T.2m]":"2m",
-             "EigFreq:C(Dur, Treatment('30s'))[T.5m]":"5m",
-             "EigFreq:C(Dur, Treatment('30s'))[T.2m]:C(StimType, Treatment('sham'))[T.eig]":"Eigenfrequency 2m",
-             "EigFreq:C(Dur, Treatment('30s'))[T.2m]:C(StimType, Treatment('sham'))[T.fix]":"Fixed frequency 2m",
-             "EigFreq:C(Dur, Treatment('30s'))[T.5m]:C(StimType, Treatment('sham'))[T.eig]":"Eigenfrequency 5m",
-             "EigFreq:C(Dur, Treatment('30s'))[T.5m]:C(StimType, Treatment('sham'))[T.fix]":"Fixed frequency 5m"
-            }
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
@@ -43,11 +33,22 @@ osc = "SO"
 baseline = "zscore"
 use_group = "nogroup"
 badsubjs = "all_subj"
-cont_var = "EigFreq"
+cont_var = "Age"
 if baseline == "zscore":
-    vmin, vmax = -6, 6
+    vmin, vmax = -.1, .1
 elif baseline == "logmean":
     vmin, vmax = -.35, .35
+
+cond_keys = {cont_var:cont_var,
+             cont_var+":C(StimType, Treatment('sham'))[T.eig]":"Eigenfrequency",
+             cont_var+":C(StimType, Treatment('sham'))[T.fix]":"Fixed frequency",
+             cont_var+":C(Dur, Treatment('30s'))[T.2m]":"2m",
+             cont_var+":C(Dur, Treatment('30s'))[T.5m]":"5m",
+             cont_var+":C(StimType, Treatment('sham'))[T.eig]:C(Dur, Treatment('30s'))[T.2m]":"Eigenfrequency 2m",
+             cont_var+":C(StimType, Treatment('sham'))[T.fix]:C(Dur, Treatment('30s'))[T.2m]":"Fixed frequency 2m",
+             cont_var+":C(StimType, Treatment('sham'))[T.eig]:C(Dur, Treatment('30s'))[T.5m]":"Eigenfrequency 5m",
+             cont_var+":C(StimType, Treatment('sham'))[T.fix]:C(Dur, Treatment('30s'))[T.5m]":"Fixed frequency 5m"
+            }
 
 keys_cond = {v:k for k,v in cond_keys.items()}
 

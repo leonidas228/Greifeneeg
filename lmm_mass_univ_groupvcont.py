@@ -15,8 +15,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 '''
-Do a mass-univariate LMM on both a categorical variable and a continous,
-also keep track of AICs to compare which was better.
+Do a mass-univariate LMM on both a categorical variable and a continous.
 
 '''
 def mass_uv_lmm(data, endog, exog, groups, exog_re):
@@ -43,19 +42,18 @@ elif isdir("/home/jeffhanna/"):
 proc_dir = root_dir+"proc/"
 
 
-cont_var = "EigFreq"
+cont_var = "Age"
+stim_type = None
 
-group_slope = True
+group_slope = False
 n_jobs = 8
 chan = "central"
-baseline = "logmean"
+baseline = "zscore"
 osc = "SO"
 sync_facts = ["syncfact", "nosyncfact"]
 sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
-#use_groups = ["group"]
-balance_conds = False
-bootstrap = True
+use_groups = ["group"]
 use_badsubjs = {"all_subj":[]}
 
 for bs_name, bad_subjs in use_badsubjs.items():
@@ -75,7 +73,7 @@ for bs_name, bad_subjs in use_badsubjs.items():
         df = tfr.metadata.copy()
         df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
-        formula = "Brain ~ {}".format(cont_var)
+        formula = "Brain ~ {}*C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))".format(cont_var)
         outfile = "{}main_fits_{}_{}_{}_{}_cont_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, cont_var)
         re_formula = None
         if group_slope:

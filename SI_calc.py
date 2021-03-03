@@ -3,6 +3,7 @@ import mne
 from circular_hist import circular_hist
 from mne.time_frequency import tfr_morlet
 from scipy.signal import detrend
+from scipy.signal.windows import gaussian
 import matplotlib.pyplot as plt
 plt.ion()
 import numpy as np
@@ -11,6 +12,10 @@ import matplotlib
 font = {'weight' : 'bold',
         'size'   : 20}
 matplotlib.rc('font', **font)
+
+def gauss_convolve(x, width):
+    gaussian = np.exp(x)
+
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
@@ -24,12 +29,13 @@ osc_types = ["SO", "deltO"]
 #osc_types = ["SO"]
 sfreq = 100.
 phase_freqs = [(0.5, 1.25),(1.25, 4)]
-power_freqs = (13, 17)
+power_freqs = (15, 18)
 conds = ["sham", "fix", "eig"]
 title_keys = {"sham":"sham", "fix":"fixed frequency stimulation", "eig":"Eigenfrequency stimulation"}
 colors = ["red", "blue", "green"]
 osc_cuts = [(-1,1),(-.75,.75)]
-gen_crop = (-1.5,1.5)
+gen_crop = (-1, 1)
+gauss_win = 0.333
 
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
                       preload=True)
@@ -40,6 +46,10 @@ power_tfr = tfr_morlet(epo, power_freqs, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs, output="power")
 power_tfr.apply_baseline((-2.25,-1.5))
 power_array = power_tfr.data[:,].mean(axis=2)
+g = gaussian(int(np.round(gauss_win*power_tfr.info["sfreq"])), 
+             gauss_win*power_tfr.info["sfreq"])
+for epo_idx in range(len(power_array)):
+    power_array[epo_idx,0,] = np.convolve(power_array[epo_idx,0,], g, mode="same")
 power_epo = mne.EpochsArray(power_array, epo.info, tmin=-2.25)
 
 SIs = np.empty(len(epo))
@@ -54,10 +64,10 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
 
     phase_tfr.crop(tmin=gen_crop[0], tmax=gen_crop[1])
     power_phase_tfr.crop(tmin=gen_crop[0], tmax=gen_crop[1])
-    epo.crop(tmin=gen_crop[0], tmax=gen_crop[1])
-    this_power_tfr = power_tfr.copy()
-    this_power_tfr.crop(tmin=gen_crop[0], tmax=gen_crop[1])
-    power = this_power_tfr.data[:,0].mean(axis=1)
+    epo.crop(tmin=osc_cut[0], tmax=osc_cut[1])
+    this_power = power_epo.copy()
+    this_power.crop(tmin=osc_cut[0], tmax=osc_cut[1])
+    power = this_power.get_data()[:,0]
     power = detrend(power, axis=1)
 
     phase = phase_tfr.data[:,0].mean(axis=1)

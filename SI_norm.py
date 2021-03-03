@@ -34,6 +34,7 @@ conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
 osc_types = ["SO", "deltO"]
 syncs = ["sync", "async", "all"]
+syncs = ["all"]
 
 SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "Cond":[], "StimType":[],
               "Dur":[], "SI_norm":[], "SM_norm":[], "SI_mean":[], "SM_mean":[]}

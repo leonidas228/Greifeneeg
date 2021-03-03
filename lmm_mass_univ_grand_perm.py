@@ -33,6 +33,8 @@ parser.add_argument('--iter', type=int, default=0)
 parser.add_argument('--baseline', type=str, default="zscore")
 parser.add_argument('--osc', type=str, default="SO")
 parser.add_argument('--syncfact', default="nosyncfact")
+parser.add_argument('--badsubjs', default="all_subj")
+parser.add_argument('--group', action='store_true')
 opt = parser.parse_args()
 
 if isdir("/home/jev"):
@@ -48,20 +50,21 @@ chan = "central"
 baseline = opt.baseline
 osc = opt.osc
 sync_fact = opt.syncfact
-use_group = "nogroup"
-bad_subjs = "all_subj"
-bad_subjs_dict = {"all_subj":[]}
+use_group = opt.group
+bad_subjs = opt.badsubjs
+bad_subjs_dict = {"all_subj":[], "no2,3":["002", "003"]}
 perm_n = opt.perm
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
 tfr = tfr["OscType=='{}'".format(osc)]
 tfr_shape = tfr.data.shape[-2:]
-#tfr = tfr["PrePost=='Post'"]
+tfr = tfr["PrePost=='Post'"]
 subjs = np.unique(tfr.metadata["Subj"].values)
 # remove all subjects with missing conditions or not meeting synchronicity criterion
 for bs in bad_subjs_dict[bad_subjs]:
     print("Removing subject {}".format(bs))
     tfr = tfr["Subj!='{}'".format(bs)]
+subjs = np.unique(tfr.metadata["Subj"].values)
 data = np.swapaxes(tfr.data[:,0],1,2)
 if baseline == "mean":
     data *= 1e+12
@@ -73,19 +76,26 @@ if sync_fact == "syncfact":
 else:
     formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 
-groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
+groups = df["Subj"] if use_group else pd.Series(np.zeros(len(df),dtype=int))
 md = smf.mixedlm(formula, df, groups=groups)
 endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
 print(exog_names)
 t_vals = np.zeros((perm_n, len(exog_names), np.product(tfr_shape)))
 data_inds = np.arange(len(data))
 for perm_idx in range(perm_n):
-    np.random.shuffle(data_inds)
+    if use_group:
+        # if we have group as a factor, we shuffle data only within subjects
+        for subj in subjs:
+            subj_inds = data_inds[df["Subj"]==subj]
+            np.random.shuffle(subj_inds)
+            data_inds[df["Subj"]==subj] = subj_inds
+    else:
+        np.random.shuffle(data_inds)
     data = data[data_inds,]
     fits = mass_uv_lmm(data, endog, exog, groups)
     for mf_idx, mf in enumerate(fits):
         for exog_idx, en in enumerate(exog_names):
-            t_vals[perm_idx, exog_idx,mf_idx] = mf.tvalues[exog_names.index(en)]
+            t_vals[perm_idx, exog_idx, mf_idx] = mf.tvalues[exog_names.index(en)]
     del fits
 
 t_vals = np.reshape(t_vals, (perm_n, len(exog_names), *tfr_shape), order="F")

@@ -81,6 +81,12 @@ eig_freqs = {'002': 0.8135739656, '003': 0.8388119505, '005': 0.6697439105,
              '047': 0.8233948546, '048': 0.7762510701, '050': 0.6685955766,
              '051': 0.7523264618, '053': 0.8741048686, '054': 0.6611531633}
 
+ages = {"002":55, "003":66, "005":77, "006":52, "007":65, "009":71, "013":76,
+        "015":56, "016":51, "017":66, "018":50, "021":77, "022":55, "024":66,
+        "025":57, "026":63, "027":71, "028":69, "031":57, "033":56, "035":69,
+        "037":55, "038":74, "043":77, "044":68, "045":73, "046":67, "047":62,
+        "048":70, "050":70, "051":76, "053":63, "054":71}
+
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
 elif isdir("/home/jeff"):
@@ -201,7 +207,7 @@ for filename in filelist:
                 df_dict = {"Subj":[],"Cond":[],"StimType":[],"Dur":[],
                            "PrePost":[],"Index":[],"Stim":[],"PureIndex":[],
                            "OscType":[], "Sync":[], "OscLen":[],"OscFreq":[],
-                           "EigFreq":[]}
+                           "EigFreq":[], "Age":[]}
                 for event_idx, event in enumerate(np.nditer(events[0][:,-1])):
                     eve = event.copy()
                     if eve >= 100:
@@ -244,6 +250,7 @@ for filename in filelist:
                     df_dict["OscLen"].append(marked_oe[event_idx].end_time - marked_oe[event_idx].start_time)
                     df_dict["OscFreq"].append(1/df_dict["OscLen"][-1])
                     df_dict["EigFreq"].append(eig_freqs[subj])
+                    df_dict["Age"].append(ages[subj])
 
                 df = pd.DataFrame.from_dict(df_dict)
                 epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=1,

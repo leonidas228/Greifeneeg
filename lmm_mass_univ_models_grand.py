@@ -40,19 +40,18 @@ proc_dir = root_dir+"proc/"
 n_jobs = 8
 chan = "central"
 baseline = "zscore"
-osc = "deltO"
+osc = "SO"
 sync_facts = ["syncfact", "nosyncfact"]
 #sync_facts = ["syncfact"]
 use_groups = ["group", "nogroup"]
-use_groups = ["nogroup"]
+#use_groups = ["group"]
 use_badsubjs = {"all_subj":[]}
-
+use_badsubjs = {"no2,3":["002", "003"]}
 
 for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:
         for sync_fact in sync_facts:
             tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
-            breakpoint()
             tfr = tfr["OscType=='{}'".format(osc)]
             if osc == "deltO":
                 tfr.crop(tmin=-0.75, tmax=0.75)
