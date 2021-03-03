@@ -99,9 +99,10 @@ for perm_idx in range(perm_n):
     del fits
 
 t_vals = np.reshape(t_vals, (perm_n, len(exog_names), *tfr_shape), order="F")
+group_txt = "group" if use_group else "nogroup"
 outfile = "{}perm_{}_grand_{}_{}_{}_{}_{}.pickle".format(proc_dir, baseline,
                                                          osc, bad_subjs,
-                                                         use_group, sync_fact,
+                                                         group_txt, sync_fact,
                                                          opt.iter)
 out_dict = {"exog_names":exog_names, "t_vals":t_vals}
 with open(outfile, "wb") as f:
