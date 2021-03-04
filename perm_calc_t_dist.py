@@ -19,12 +19,12 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-iter_num = 64
+iter_num = 255
 baseline = "zscore"
-osc = "deltO"
-sync_fact = "nosyncfact"
-bad_subjs = "all_subj"
-use_group = "nogroup"
+osc = "SO"
+sync_fact = "syncfact"
+bad_subjs = "no2,3"
+use_group = "group"
 tfce_thresh = dict(start=0, step=0.2)
 minmax_ts = {}
 for iter_idx in range(iter_num):

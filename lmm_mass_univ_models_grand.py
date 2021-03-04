@@ -42,11 +42,11 @@ chan = "central"
 baseline = "zscore"
 osc = "SO"
 sync_facts = ["syncfact", "nosyncfact"]
-#sync_facts = ["syncfact"]
+sync_facts = ["syncfact"]
 use_groups = ["group", "nogroup"]
-#use_groups = ["group"]
+use_groups = ["group"]
 use_badsubjs = {"all_subj":[]}
-use_badsubjs = {"no2,3":["002", "003"]}
+use_badsubjs = {"no2,3,28":["002", "003", "028"]}
 
 for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:

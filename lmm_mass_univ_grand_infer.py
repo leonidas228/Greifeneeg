@@ -130,7 +130,6 @@ evo_data = evo.data
 evo_data = (evo_data - ev_min) / (ev_max - ev_min)
 evo_data = evo_data*4 + 12
 
-
 stat_conds = list(cond_keys.keys())
 tfr_c = tfr_avg.copy()
 dat_shape = tfr_c.data.shape[1:]

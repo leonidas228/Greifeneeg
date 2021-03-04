@@ -19,8 +19,8 @@ sfreq = 50.
 thresh = 99.9
 epo_pref = ""
 
-bl = (-2.15,-1.2)
-crop = (-1.2,1.2)
+bl = (-2.35,-1.5)
+crop = (-1.5,1.5)
 
 for chan in chans:
     epo = mne.read_epochs("{}{}grand_{}_finfo-epo.fif".format(proc_dir, epo_pref,chan),
@@ -28,7 +28,7 @@ for chan in chans:
     epo.resample(sfreq, n_jobs="cuda")
     power = tfr_morlet(epo, spindle_freq, n_cycles=5, average=False,
                        return_itc=False, n_jobs=n_jobs)
-    power.crop(tmin=-2.15, tmax=1.2) # get rid of edge effects
+    power.crop(tmin=-2.35, tmax=2.35) # get rid of edge effects
 
     power_mean = power.copy().apply_baseline((bl[0],bl[1]), mode="mean")
     power_mean.crop(tmin=crop[0],tmax=crop[1])

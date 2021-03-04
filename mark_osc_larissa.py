@@ -253,7 +253,7 @@ for filename in filelist:
                     df_dict["Age"].append(ages[subj])
 
                 df = pd.DataFrame.from_dict(df_dict)
-                epo = mne.Epochs(raw, events[0], tmin=-2.25, tmax=1.75, detrend=1,
+                epo = mne.Epochs(raw, events[0], tmin=-2.5, tmax=2.5, detrend=1,
                                  baseline=None, metadata=df, event_repeated="drop").load_data()
                 raw.save("{}NAP_{}_{}_{}_{}-raw.fif".format(proc_dir,subj,cond,k,osc_type),
                          overwrite=True)

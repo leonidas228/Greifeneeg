@@ -89,11 +89,11 @@ durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
 osc = "SO"
 baseline = "zscore"
-sync_fact = "syncfact"
+sync_fact = "nosyncfact"
 use_group = "group"
 prepost = False
 balance_conds = False
-badsubjs = "no2,3"
+badsubjs = "no2,3,28"
 if baseline == "zscore":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
