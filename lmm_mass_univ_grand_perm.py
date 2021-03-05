@@ -12,14 +12,14 @@ import pickle
 import warnings
 warnings.filterwarnings("ignore")
 
-def mass_uv_lmm(data, endog, exog, groups):
+def mass_uv_lmm(data, endog, exog, groups, exog_re, exog_vc):
     exog_n = exog.shape[1]
     dat = data.reshape(len(data), data.shape[1]*data.shape[2])
     fits = []
     for pnt_idx in range(dat.shape[1]):
         print("{} of {}".format(pnt_idx, dat.shape[1]))
         endog = dat[:, pnt_idx]
-        this_mod = MixedLM(endog, exog, groups)
+        this_mod = MixedLM(endog, exog, groups, exog_re=exog_re, exog_vc=exog_vc)
         try:
             fits.append(this_mod.fit(reml=True))
         except:
@@ -73,14 +73,27 @@ if baseline == "mean":
 df = tfr.metadata.copy()
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
+groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
+re_form = None
+vc_form = None
 if sync_fact == "syncfact":
     formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))*C(Sync, Treatment('sync'))"
+elif sync_fact == "rsyncfact":
+    groups = df["Sync"]
+    vc_form = {"Subj": "0 + C(Subj)"} if use_group else None
+    re_form = "0 + Stim"
+    formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 else:
     formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 
-groups = df["Subj"] if use_group else pd.Series(np.zeros(len(df),dtype=int))
-md = smf.mixedlm(formula, df, groups=groups)
-endog, exog, groups, exog_names = md.endog, md.exog, md.groups, md.exog_names
+md = smf.mixedlm(formula, df, re_formula=re_form,
+                 vc_formula=vc_form, groups=groups)
+(endog, exog, groups, exog_names, exog_re, exog_vc) = (md.endog,
+                                                       md.exog,
+                                                       md.groups,
+                                                       md.exog_names,
+                                                       md.exog_re,
+                                                       md.exog_vc)
 print(exog_names)
 t_vals = np.zeros((perm_n, len(exog_names), np.product(tfr_shape)))
 data_inds = np.arange(len(data))
@@ -94,7 +107,7 @@ for perm_idx in range(perm_n):
     else:
         np.random.shuffle(data_inds)
     data = data[data_inds,]
-    fits = mass_uv_lmm(data, endog, exog, groups)
+    fits = mass_uv_lmm(data, endog, exog, groups, exog_re, exog_vc)
     for mf_idx, mf in enumerate(fits):
         for exog_idx, en in enumerate(exog_names):
             t_vals[perm_idx, exog_idx, mf_idx] = mf.tvalues[exog_names.index(en)]
