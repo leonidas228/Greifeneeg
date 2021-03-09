@@ -19,11 +19,11 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-iter_num = 255
+iter_num = 64
 baseline = "zscore"
 osc = "SO"
-sync_fact = "syncfact"
-bad_subjs = "no2,3"
+sync_fact = "rsyncfact"
+bad_subjs = "no2,3,28"
 use_group = "group"
 tfce_thresh = dict(start=0, step=0.2)
 minmax_ts = {}

@@ -77,11 +77,11 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
-osc = "deltO"
+osc = "SO"
 baseline = "zscore"
-sync_fact = "nosyncfact"
-use_group = "nogroup"
-badsubjs = "all_subj"
+sync_fact = "rsyncfact"
+use_group = "group"
+badsubjs = "no2,3,28"
 if baseline == "zscore":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":

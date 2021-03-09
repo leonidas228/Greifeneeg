@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.stats import circmean
 from os.path import isdir
 import statsmodels.formula.api as smf
+import seaborn as sns
 from circular_hist import circ_hist_norm
 import matplotlib.pyplot as plt
 plt.ion()
@@ -93,3 +94,33 @@ for sync in syncs:
         plt.suptitle("Spindle Peak on {} phase{}".format(osc, sync_string))
         plt.tight_layout()
         plt.savefig("../images/polar_hist_{}_{}".format(osc, sync))
+
+d = SI_df.query("OscType=='SO'")
+sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
+plt.ylabel("Resultant Vector")
+plt.suptitle("Slow Oscillations")
+plt.savefig("../images/resvec_bar_SO_sync")
+sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar")
+plt.ylabel("Resultant Vector")
+plt.suptitle("Slow Oscillations")
+plt.savefig("../images/resvec_bar_SO_all".format(osc, sync))
+
+formula = "SM_norm ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
+mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
+mf = mod.fit()
+mf.summary()
+
+d = SI_df.query("OscType=='deltO'")
+sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
+plt.ylabel("Resultant Vector")
+plt.suptitle("Delta Oscillations")
+plt.savefig("../images/resvec_bar_deltO_sync")
+sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar")
+plt.ylabel("Resultant Vector")
+plt.suptitle("Delta Oscillations")
+plt.savefig("../images/resvec_bar_deltO_all".format(osc, sync))
+
+formula = "SM_norm ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
+mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
+mf = mod.fit()
+mf.summary()
