@@ -19,7 +19,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-iter_num = 64
+iter_num = 256
 baseline = "zscore"
 osc = "SO"
 sync_fact = "rsyncfact"
@@ -32,8 +32,12 @@ for iter_idx in range(iter_num):
                                                             osc, bad_subjs,
                                                             use_group, sync_fact,
                                                             iter_idx)
-    with open(infile, "rb") as f:
-        in_dict = pickle.load(f)
+    try:
+        with open(infile, "rb") as f:
+            in_dict = pickle.load(f)
+    except:
+        print("Unable to load iteration {}".format(iter_idx))
+        continue
     exog_names = in_dict["exog_names"]
     t_vals = in_dict["t_vals"]
     for en_idx, en in enumerate(exog_names):

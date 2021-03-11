@@ -1,6 +1,7 @@
 import mne
 import numpy as np
 from mne.time_frequency import read_tfrs
+from mne.stats import fdr_correction
 from os.path import isdir
 import pickle
 import matplotlib.pyplot as plt
@@ -87,7 +88,7 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
-osc = "SO"
+osc = "deltO"
 baseline = "zscore"
 sync_fact = "rsyncfact"
 use_group = "group"
@@ -98,6 +99,7 @@ if baseline == "zscore":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
     vmin, vmax = -.35, .35
+fdr_cor = True
 
 if prepost:
     new_cond_keys = {k+":C(PrePost, Treatment('Pre'))[T.Post]":v+" Post-stimulation"
@@ -163,6 +165,8 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
 
         pvals = data[2,].reshape(*dat_shape, order="F")
         pvals[np.isnan(pvals)] = 1
+        if fdr_cor:
+            _, pvals = fdr_correction(pvals)
         mask = pvals<0.05
         if "Intercept" in en:
             mask = None
@@ -177,11 +181,14 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
                           linewidth=10)
         axes[en_idx].set_title(cond_keys[en])
 
-    fig.suptitle("{}_{}_{}_{}".format(osc, badsubjs, use_group, sync_fact))
+    suptitle_str = "LME model parameters of {} spindle power".format(osc)
     if sync_fact == "syncfact":
-        fig.suptitle("LME model parameters of {} spindle power, synchronicity tested".format(osc))
-    else:
-        fig.suptitle("LME model parameters of {} spindle power, synchronicity not tested".format(osc))
+        suptitle_str += ", synchronicity tested"
+    elif sync_fact == "nosyncfact":
+        suptitle_str += ", synchronicity not tested"
+    elif sync_fact == "rsyncfact":
+        suptitle_str += ", synchronicity as random effect"
+    fig.suptitle(suptitle_str)
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
 
@@ -205,9 +212,13 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
                             linewidth=10)
         axes[cond_idx].set_title(exog_key)
 
+    suptitle_str = "LME model predictions of {} spindle power".format(osc)
     if sync_fact == "syncfact":
-        fig.suptitle("LME model predictions of {} spindle power, synchronicity tested".format(osc))
-    else:
-        fig.suptitle("LME model predictions of {} spindle power, synchronicity not tested".format(osc))
+        suptitle_str += ", synchronicity tested"
+    elif sync_fact == "nosyncfact":
+        suptitle_str += ", synchronicity not tested"
+    elif sync_fact == "rsyncfact":
+        suptitle_str += ", synchronicity as random effect"
+    fig.suptitle(suptitle_str)
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))

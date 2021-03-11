@@ -26,18 +26,18 @@ osc_types = ["SO", "deltO"]
 #osc_types = ["SO"]
 sfreq = 100.
 phase_freqs = [(0.16, 1.25),(1.25, 4)]
-power_freqs = (15, 18)
+power_freqs = (12, 17)
 conds = ["sham", "fix", "eig"]
 title_keys = {"sham":"sham", "fix":"fixed frequency stimulation", "eig":"Eigenfrequency stimulation"}
 colors = ["red", "blue", "green"]
 osc_cuts = [(-1.25,1.25),(-.75,.75)]
 gauss_win = 0.1
 method = "wavelet"
-baseline = "zscore"
+baseline = None
 bl_time = (-2.35, -1.25)
-power_detrend = True
+power_detrend = False
 power_win = True
-convolve = 0.2
+convolve = None
 
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
                       preload=True)
@@ -106,13 +106,15 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
         axes[1].plot(times, phase.T, alpha=0.005, color="red")
         axes[1].plot(times, phase.mean(axis=0), alpha=1, color="black")
         axes[1].set_title("SO Instantaneous Phase")
-        axes[2].imshow(power, aspect="auto", vmin=-75, vmax=75)
+        vmax = 5 if method=="hilbert" else 200
+        axes[2].imshow(power, aspect="auto", vmin=0, vmax=vmax)
         axes[2].set_title("SO Spindle Power")
         axes[2].set_xticks(np.arange(25,250,50))
         axes[2].set_xticklabels(times[np.arange(25,250,50)])
         axes[3].hist(times[maxima], bins=20)
         axes[3].set_title("SO Spindle Power Maxima")
         fig.suptitle("{} transform".format(method))
+        plt.savefig("../images/SO_{}_pha_pow_max.png".format(method))
 
     this_epo.metadata["SI"] = SI_ang
     this_epo.metadata["Spind_Max"] = spind_max

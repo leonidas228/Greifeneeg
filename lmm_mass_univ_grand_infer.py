@@ -87,7 +87,7 @@ if baseline == "zscore":
 elif baseline == "logmean":
     vmin, vmax = -.35, .35
 tfce_thresh = dict(start=0, step=0.2)
-perm_thresh = 95
+perm_thresh = 92
 
 if sync_fact == "syncfact":
     # adjust the keys
