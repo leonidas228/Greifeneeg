@@ -36,6 +36,7 @@ durs = ["30s", "2m", "5m"]
 osc_types = ["SO", "deltO"]
 syncs = ["sync", "async", "all"]
 syncs = ["all"]
+method = "wavelet"
 
 SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "Cond":[], "StimType":[],
               "Dur":[], "SI_norm":[], "SM_norm":[], "SI_mean":[], "SM_mean":[]}
@@ -89,21 +90,21 @@ for sync in syncs:
                         [(mean, r_norm), {"color":"blue","linewidth":4}]]
                 circ_hist_norm(axes[dur_idx,cond_idx], this_df["Spind_Max"].values,
                                points=subj_spinds, vecs=vecs, alpha=0.3,
-                               points_col="red")
+                               points_col="red", bins=48)
                 axes[dur_idx,cond_idx].set_title("{} {}".format(cond, dur))
-        plt.suptitle("Spindle Peak on {} phase{}".format(osc, sync_string))
+        plt.suptitle("Spindle Peak on {} phase {} ({} transform)".format(osc, sync_string, method))
         plt.tight_layout()
-        plt.savefig("../images/polar_hist_{}_{}".format(osc, sync))
+        plt.savefig("../images/polar_hist_{}_{}_{}".format(osc, sync, method))
 
 d = SI_df.query("OscType=='SO'")
 sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
 plt.ylabel("Resultant Vector")
-plt.suptitle("Slow Oscillations")
+plt.suptitle("Slow Oscillations ({} transform)".format(method))
 plt.savefig("../images/resvec_bar_SO_sync")
 sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar")
 plt.ylabel("Resultant Vector")
-plt.suptitle("Slow Oscillations")
-plt.savefig("../images/resvec_bar_SO_all".format(osc, sync))
+plt.suptitle("Slow Oscillations ({} transform)".format(method))
+plt.savefig("../images/resvec_bar_SO_all_{}".format(method))
 
 formula = "SM_norm ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
@@ -113,12 +114,12 @@ mf.summary()
 d = SI_df.query("OscType=='deltO'")
 sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
 plt.ylabel("Resultant Vector")
-plt.suptitle("Delta Oscillations")
+plt.suptitle("Delta Oscillations ({} transform)".format(method))
 plt.savefig("../images/resvec_bar_deltO_sync")
 sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar")
 plt.ylabel("Resultant Vector")
-plt.suptitle("Delta Oscillations")
-plt.savefig("../images/resvec_bar_deltO_all".format(osc, sync))
+plt.suptitle("Delta Oscillations ({} transform)".format(method))
+plt.savefig("../images/resvec_bar_deltO_all_{}".format(method))
 
 formula = "SM_norm ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
