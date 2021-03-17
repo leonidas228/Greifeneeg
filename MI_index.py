@@ -26,7 +26,7 @@ conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
 osc_cuts = [(-1.25,1.25),(-.75,.75)]
 osc_cuts = [(.15,.7),(-.75,.75)]
-method = "hilbert"
+method = "wavelet"
 
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
                       preload=True)
@@ -36,7 +36,7 @@ osc_types = ["SO", "deltO"]
 epos = []
 dfs = []
 for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
-    p = Pac(f_pha=np.linspace(pf[0],pf[1],10),
+    p = Pac(f_pha=(pf[0], pf[1]), #f_pha=np.linspace(pf[0],pf[1],10),
             f_amp=np.linspace(power_freqs[0],power_freqs[1],10),
             dcomplex=method)
 
@@ -69,11 +69,18 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
     nd = {"pac":nd, "pvals":p.pvalues}
     with open("{}nd_{}_{}.pickle".format(proc_dir, osc, method), "wb") as f:
         pickle.dump(nd, f)
+    # p.idpac = (6,0,0)
+    # gc = p.fit(phase, power)
+    # gc = gc.mean(0).mean(0)
+    # gc = {"pac":gc, "pvals":p.pvalues}
+    # with open("{}gc_{}_{}.pickle".format(proc_dir, osc, method), "wb") as f:
+    #     pickle.dump(gc, f)
 
 
     this_df["MVL"] = mvl["pac"]
     this_df["PLV"] = plv["pac"]
     this_df["ND"] = nd["pac"]
+    #this_df["GC"] = gc["pac"]
     dfs.append(this_df)
 
 new_df = pd.concat(dfs, ignore_index=True)

@@ -36,7 +36,7 @@ durs = ["30s", "2m", "5m"]
 osc_types = ["SO", "deltO"]
 syncs = ["sync", "async", "all"]
 syncs = ["all"]
-method = "wavelet"
+method = "hilbert"
 
 SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "Cond":[], "StimType":[],
               "Dur":[], "SI_norm":[], "SM_norm":[], "SI_mean":[], "SM_mean":[]}
@@ -97,11 +97,12 @@ for sync in syncs:
         plt.savefig("../images/polar_hist_{}_{}_{}".format(osc, sync, method))
 
 d = SI_df.query("OscType=='SO'")
-sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
-plt.ylabel("Resultant Vector")
-plt.suptitle("Slow Oscillations ({} transform)".format(method))
-plt.savefig("../images/resvec_bar_SO_sync")
-sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar")
+# sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
+# plt.ylabel("Resultant Vector")
+# plt.suptitle("Slow Oscillations ({} transform)".format(method))
+# plt.savefig("../images/resvec_bar_SO_sync")
+fig, ax = plt.subplots(figsize=(38.4,21.6))
+sns.barplot(data=d, x="StimType", hue="Dur", y="SM_norm", ax=ax)
 plt.ylabel("Resultant Vector")
 plt.suptitle("Slow Oscillations ({} transform)".format(method))
 plt.savefig("../images/resvec_bar_SO_all_{}".format(method))
@@ -109,14 +110,15 @@ plt.savefig("../images/resvec_bar_SO_all_{}".format(method))
 formula = "SM_norm ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
 mf = mod.fit()
-mf.summary()
+print(mf.summary())
 
 d = SI_df.query("OscType=='deltO'")
-sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
-plt.ylabel("Resultant Vector")
-plt.suptitle("Delta Oscillations ({} transform)".format(method))
-plt.savefig("../images/resvec_bar_deltO_sync")
-sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar")
+# sns.catplot(data=d, x="StimType", hue="Dur", y="SM_norm", kind="bar", col="Sync")
+# plt.ylabel("Resultant Vector")
+# plt.suptitle("Delta Oscillations ({} transform)".format(method))
+# plt.savefig("../images/resvec_bar_deltO_sync")
+fig, ax = plt.subplots(figsize=(38.4,21.6))
+sns.barplot(data=d, x="StimType", hue="Dur", y="SM_norm", ax=ax)
 plt.ylabel("Resultant Vector")
 plt.suptitle("Delta Oscillations ({} transform)".format(method))
 plt.savefig("../images/resvec_bar_deltO_all_{}".format(method))
@@ -124,4 +126,4 @@ plt.savefig("../images/resvec_bar_deltO_all_{}".format(method))
 formula = "SM_norm ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
 mf = mod.fit()
-mf.summary()
+print(mf.summary())

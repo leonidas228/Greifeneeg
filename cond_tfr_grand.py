@@ -88,17 +88,21 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
-osc = "deltO"
-baseline = "zscore"
+osc = "SO"
+baseline = "mean"
 sync_fact = "rsyncfact"
 use_group = "group"
 prepost = False
 balance_conds = False
 badsubjs = "no2,3,28"
-if baseline == "zscore":
+if baseline == "zscore" or baseline=="zboot":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
-    vmin, vmax = -.35, .35
+    vmin, vmax = -.3, .3
+elif baseline == "mean":
+    vmin, vmax = -5, 100
+else:
+    vmin, vmax = None, None
 fdr_cor = True
 
 if prepost:
@@ -181,16 +185,17 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
                           linewidth=10)
         axes[en_idx].set_title(cond_keys[en])
 
-    suptitle_str = "LME model parameters of {} spindle power".format(osc)
+    suptitle_str = "LME parameters of {} spindle power, {} baseline".format(osc, baseline)
     if sync_fact == "syncfact":
         suptitle_str += ", synchronicity tested"
     elif sync_fact == "nosyncfact":
         suptitle_str += ", synchronicity not tested"
     elif sync_fact == "rsyncfact":
-        suptitle_str += ", synchronicity as random effect"
+        #suptitle_str += ", synchronicity as random effect"
+        suptitle_str += ""
     fig.suptitle(suptitle_str)
     fig.tight_layout()
-    fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
+    fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}_{}.tif".format(baseline, osc, badsubjs, use_group, sync_fact, order_idx))
 
 
 # predictions
@@ -212,7 +217,7 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
                             linewidth=10)
         axes[cond_idx].set_title(exog_key)
 
-    suptitle_str = "LME model predictions of {} spindle power".format(osc)
+    suptitle_str = "LME model predictions of {} spindle power, {} baseline".format(osc, baseline)
     if sync_fact == "syncfact":
         suptitle_str += ", synchronicity tested"
     elif sync_fact == "nosyncfact":
@@ -221,4 +226,4 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
         suptitle_str += ", synchronicity as random effect"
     fig.suptitle(suptitle_str)
     fig.tight_layout()
-    fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
+    fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}_{}.tif".format(baseline, osc, badsubjs, use_group, sync_fact, order_idx))

@@ -32,7 +32,7 @@ title_keys = {"sham":"sham", "fix":"fixed frequency stimulation", "eig":"Eigenfr
 colors = ["red", "blue", "green"]
 osc_cuts = [(-1.25,1.25),(-.75,.75)]
 gauss_win = 0.1
-method = "wavelet"
+method = "hilbert"
 baseline = None
 bl_time = (-2.35, -1.25)
 power_detrend = False
@@ -48,7 +48,7 @@ osc_types = ["SO", "deltO"]
 epos = []
 for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
 
-    p = Pac(f_pha=np.linspace(pf[0],pf[1],10),
+    p = Pac(f_pha=(pf[0], pf[1]), #f_pha=np.linspace(pf[0],pf[1],10),
             f_amp=np.linspace(power_freqs[0],power_freqs[1],10),
             dcomplex=method)
 
