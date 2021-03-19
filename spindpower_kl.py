@@ -7,11 +7,16 @@ import re
 import seaborn as sns
 import matplotlib.pyplot as plt
 import statsmodels.formula.api as smf
+from scipy.optimize import curve_fit
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
         'size'   : 20}
 matplotlib.rc('font', **font)
+
+def gauss(x, A, mu, sigma):
+    y =  A*np.exp(-1.0*(x - mu)**2 / (2*sigma**2))
+    return y
 
 def KL_div(p, q):
     p += 1e-5
@@ -34,7 +39,13 @@ def df_KL_divergences(df):
     deltO_kl = KL_div(deltO_counts, free_counts)
     ratio = SO_kl / deltO_kl
 
-    return (SO_kl, deltO_kl, ratio)
+    # divergence from fitted gaussian
+    all_counts = np.vstack([SO_counts, deltO_counts, free_counts]).mean(axis=0)
+    (a, mu, std), _ = curve_fit(gauss, bins, all_counts)
+    fitted_gauss = gauss(bins, a, mu, std)
+    gauss_kl = KL_div(all_counts, fitted_gauss)
+
+    return (SO_kl, deltO_kl, ratio, gauss_kl)
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
@@ -44,6 +55,7 @@ proc_dir = root_dir+"proc/"
 
 perm_n = 1000
 conds = ["sham", "fix", "eig"]
+exclude = ["002", "003", "028"]
 
 filelist = listdir(proc_dir)
 
@@ -57,6 +69,9 @@ for filename in filelist:
         continue
     subj, cond, chan = (this_match.group(1), this_match.group(2),
                         this_match.group(3))
+    if subj in exclude:
+        print("Skipping subject {}".format(subj))
+        continue
     with open(proc_dir+filename, "rb") as f:
         histos = pickle.load(f)
 
@@ -90,7 +105,7 @@ conds = list(df["StimType"].unique())
 durs = list(df["Dur"].unique())
 
 kl_dict = {"Subj":[], "Cond":[], "Dur":[], "SO_div":[], "deltO_div":[],
-           "Ratio":[], "Sync":[]}
+           "gauss_div":[], "Ratio":[], "Sync":[]}
 for subj in subjs:
     for cond in conds:
         for dur in durs:
@@ -100,7 +115,7 @@ for subj in subjs:
             this_df = df.query(q_str)
             if not len(this_df):
                 continue
-            SO_kl, deltO_kl, ratio = df_KL_divergences(this_df)
+            SO_kl, deltO_kl, ratio, gauss_kl = df_KL_divergences(this_df)
             if int(subj) < 31 and subj != "021" and subj!='017':
                 sync = "async"
             else:
@@ -111,9 +126,11 @@ for subj in subjs:
             kl_dict["Dur"].append(dur)
             kl_dict["SO_div"].append(SO_kl)
             kl_dict["deltO_div"].append(deltO_kl)
+            kl_dict["gauss_div"].append(gauss_kl)
             kl_dict["Ratio"].append(ratio)
             kl_dict["Sync"].append(sync)
 kl_df = pd.DataFrame.from_dict(kl_dict)
+kl_df.to_pickle("{}kl_divs.pickle".format(proc_dir))
 
 plt.figure()
 sns.barplot(data=kl_df, x="Cond", y="SO_div", hue="Dur",
@@ -129,6 +146,11 @@ plt.figure()
 sns.barplot(data=kl_df, x="Cond", y="Ratio", hue="Dur",
             order=["sham", "eig", "fix"], hue_order=["30s", "2m", "5m"])
 plt.title("SO/deltO ratio")
+
+plt.figure()
+sns.barplot(data=kl_df, x="Cond", y="gauss_div", hue="Dur",
+            order=["sham", "eig", "fix"], hue_order=["30s", "2m", "5m"])
+plt.title("Spindle presence")
 
 re_form = None
 vc_form = {"Subj": "0 + C(Subj)"}
@@ -146,6 +168,12 @@ mf = md.fit()
 print(mf.summary())
 
 formula = "Ratio ~ C(Cond, Treatment('sham'))*C(Dur, Treatment('30s'))"
+md = smf.mixedlm(formula, kl_df, re_formula=re_form,
+                 vc_formula=vc_form, groups=groups)
+mf = md.fit()
+print(mf.summary())
+
+formula = "gauss_div ~ C(Cond, Treatment('sham'))*C(Dur, Treatment('30s'))"
 md = smf.mixedlm(formula, kl_df, re_formula=re_form,
                  vc_formula=vc_form, groups=groups)
 mf = md.fit()

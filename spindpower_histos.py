@@ -28,7 +28,7 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir+"proc/"
 
 perm_n = 1000
-overwrite = False
+overwrite = True
 
 filelist = listdir(proc_dir)
 
@@ -84,6 +84,8 @@ for filename in filelist:
                            output="power")
     tfr = tfr.squeeze().mean(axis=0)
     tfr = np.log10(tfr)
+
+    breakpoint()
 
     boot_num = min_count - 5
 

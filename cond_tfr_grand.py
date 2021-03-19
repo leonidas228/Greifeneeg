@@ -89,7 +89,7 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
 osc = "SO"
-baseline = "mean"
+baseline = "zscore"
 sync_fact = "rsyncfact"
 use_group = "group"
 prepost = False
@@ -174,6 +174,10 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
         mask = pvals<0.05
         if "Intercept" in en:
             mask = None
+
+        if np.any(mask):
+            np.save("{}sig_mask_{}.npy".format(proc_dir, cond_keys[en]), mask)
+
         dat = data[0,].reshape(*dat_shape, order="F")
         dat[np.isnan(dat)] = 0
         tfr_c.data[0,] = dat

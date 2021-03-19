@@ -27,9 +27,12 @@ durs = ["30s", "2m", "5m"]
 osc_cuts = [(-1.25,1.25),(-.75,.75)]
 osc_cuts = [(.15,.7),(-.75,.75)]
 method = "wavelet"
+exclude = ["002", "003", "028"]
 
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
                       preload=True)
+for excl in exclude:
+    epo = epo["Subj!='{}'".format(excl)]
 epo.resample(sfreq, n_jobs="cuda")
 
 osc_types = ["SO", "deltO"]
@@ -75,7 +78,6 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
     # gc = {"pac":gc, "pvals":p.pvalues}
     # with open("{}gc_{}_{}.pickle".format(proc_dir, osc, method), "wb") as f:
     #     pickle.dump(gc, f)
-
 
     this_df["MVL"] = mvl["pac"]
     this_df["PLV"] = plv["pac"]
