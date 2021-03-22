@@ -32,6 +32,8 @@ overwrite = True
 
 filelist = listdir(proc_dir)
 
+overlaps = 0
+total_osc = 0
 for filename in filelist:
     # load files, merge SO and deltO annotations
     this_match = re.match("NAP_(.*)_(.*)_(.*)_SO-raw.fif", filename)
@@ -76,6 +78,9 @@ for filename in filelist:
     event_bools[2,] = ~(event_bools[0,] | event_bools[1,])
     min_count = np.min(event_bools.sum(axis=1))
 
+    overlaps += len(np.where(event_bools[0,] & event_bools[1,])[0])
+    total_osc += len(np.where(event_bools[0,] | event_bools[1,])[0])
+
     # calculate tfr of raw
     raw.pick_channels(["central"])
     data = np.expand_dims(raw.get_data() * 1e+6, 0)
@@ -85,7 +90,6 @@ for filename in filelist:
     tfr = tfr.squeeze().mean(axis=0)
     tfr = np.log10(tfr)
 
-    breakpoint()
 
     boot_num = min_count - 5
 

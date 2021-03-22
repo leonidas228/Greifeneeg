@@ -39,7 +39,7 @@ proc_dir = root_dir+"proc/"
 
 n_jobs = 8
 chan = "central"
-baseline = "mean"
+baseline = "zscore"
 osc = "SO"
 sync_facts = ["syncfact", "nosyncfact"]
 sync_facts = ["rsyncfact"]

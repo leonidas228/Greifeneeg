@@ -18,7 +18,7 @@ osc_types = ["SO", "deltO"]
 sfreq = 50.
 thresh = 99.9
 epo_pref = ""
-zboot_n = 10000
+zboot_n = None
 bl = (-2.35,-1.5)
 crop = (-1.5,1.5)
 

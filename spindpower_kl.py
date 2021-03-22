@@ -8,6 +8,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import statsmodels.formula.api as smf
 from scipy.optimize import curve_fit
+from scipy.stats import wasserstein_distance
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
@@ -24,7 +25,7 @@ def KL_div(p, q):
     kl = np.sum(p * np.log(p/q))
     return kl
 
-def df_KL_divergences(df):
+def df_prob_dists(df, method="kl"):
     boot_num = df["boot_num"]
     bins = np.array(list(df["Bins"].values))
     bins = np.average(bins, axis=0, weights=boot_num)
@@ -35,17 +36,23 @@ def df_KL_divergences(df):
     free_counts = np.array(list(df["free_counts"].values))
     free_counts = np.average(free_counts, axis=0, weights=boot_num)
 
-    SO_kl = KL_div(SO_counts, free_counts)
-    deltO_kl = KL_div(deltO_counts, free_counts)
-    ratio = SO_kl / deltO_kl
-
-    # divergence from fitted gaussian
+    # fitted gaussian
     all_counts = np.vstack([SO_counts, deltO_counts, free_counts]).mean(axis=0)
     (a, mu, std), _ = curve_fit(gauss, bins, all_counts)
     fitted_gauss = gauss(bins, a, mu, std)
-    gauss_kl = KL_div(all_counts, fitted_gauss)
 
-    return (SO_kl, deltO_kl, ratio, gauss_kl)
+    if method == "kl":
+        SO_div = KL_div(SO_counts, free_counts)
+        deltO_div = KL_div(deltO_counts, free_counts)
+        gauss_div = KL_div(all_counts, fitted_gauss)
+    elif method == "wass":
+        SO_div = wasserstein_distance(free_counts, SO_counts)
+        deltO_div = wasserstein_distance(free_counts, deltO_counts)
+        gauss_div = wasserstein_distance(fitted_gauss, all_counts)
+
+    ratio = SO_div / deltO_div
+
+    return (SO_div, deltO_div, ratio, gauss_div)
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
@@ -115,7 +122,8 @@ for subj in subjs:
             this_df = df.query(q_str)
             if not len(this_df):
                 continue
-            SO_kl, deltO_kl, ratio, gauss_kl = df_KL_divergences(this_df)
+            SO_kl, deltO_kl, ratio, gauss_kl = df_prob_dists(this_df,
+                                                             method="kl")
             if int(subj) < 31 and subj != "021" and subj!='017':
                 sync = "async"
             else:

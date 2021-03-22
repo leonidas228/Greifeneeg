@@ -46,25 +46,25 @@ df_dict = {"Subj":[], "TFR":[], "PAC":[], "KLDiv_gauss":[], "KLDiv_NestSO":[],
 for subj in subjs:
     df_dict["Subj"].append(subj)
     # TFR
-    sham_TFR = tfr["Subj=='{}' and StimType=='sham' and Dur=='30s'".format(subj)].average()
+    sham_TFR = tfr["Subj=='{}' and StimType=='sham'".format(subj)].average()
     sham_value = sham_TFR.data[0,sig_mask].mean()
-    fix_TFR = tfr["Subj=='{}' and StimType=='fix' and Dur=='30s'".format(subj)].average()
+    fix_TFR = tfr["Subj=='{}' and StimType=='fix'".format(subj)].average()
     fix_value = fix_TFR.data[0,sig_mask].mean()
     df_dict["TFR"].append(fix_value - sham_value)
 
     # PAC
-    this_df = df_pac.query("Subj=='{}' and StimType=='sham' and Dur=='30s'".format(subj))
+    this_df = df_pac.query("Subj=='{}' and StimType=='sham'".format(subj))
     nd_sham_value = this_df["ND"].values.mean()
-    this_df = df_pac.query("Subj=='{}' and StimType=='fix' and Dur=='30s'".format(subj))
+    this_df = df_pac.query("Subj=='{}' and StimType=='fix'".format(subj))
     nd_fix_value = this_df["ND"].values.mean()
     df_dict["PAC"].append(nd_fix_value - nd_sham_value)
 
     # KL Measures
-    this_df = df_kl.query("Subj=='{}' and Cond=='sham' and Dur=='30s'".format(subj))
+    this_df = df_kl.query("Subj=='{}' and Cond=='sham'".format(subj))
     div_gauss_sham = this_df["gauss_div"].values.mean()
     div_nestso_sham = this_df["SO_div"].values.mean()
     div_nestdo_sham = this_df["deltO_div"].values.mean()
-    this_df = df_kl.query("Subj=='{}' and Cond=='fix' and Dur=='30s'".format(subj))
+    this_df = df_kl.query("Subj=='{}' and Cond=='fix'".format(subj))
     div_gauss_fix = this_df["gauss_div"].values.mean()
     div_nestso_fix = this_df["SO_div"].values.mean()
     div_nestdo_fix = this_df["deltO_div"].values.mean()
@@ -73,6 +73,7 @@ for subj in subjs:
     df_dict["KLDiv_NestDO"].append(div_nestdo_fix - div_nestdo_sham)
 
 df = pd.DataFrame.from_dict(df_dict)
+df.to_csv("../indiv_data/indiv_measures.csv")
 
 # normalize the columns
 df_norm = df.copy()
