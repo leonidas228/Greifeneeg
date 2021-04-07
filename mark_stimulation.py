@@ -39,10 +39,12 @@ for filename in filelist:
     this_match = re.match("f_NAP_(\d{3})_T(\d)-raw.fif",filename)
     if this_match:
         subj, tag = this_match.group(1), int(this_match.group(2))
-        if tag < 2: # skip the first two non-stim recordings
+        if tag < 2:
+            raw = mne.io.Raw(proc_dir+filename,preload=True)
+            raw.save("{}af_NAP_{}_{}-raw.fif".format(proc_dir, subj, tag),
+                     overwrite=True)
             continue
-        # if subj != "054":
-        #     continue
+
         ur_raw = mne.io.Raw(proc_dir+filename,preload=True)
         raw = ur_raw.copy()
         psds, freqs = psd_multitaper(raw, fmax=2, picks=picks, n_jobs=n_jobs)

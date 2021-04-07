@@ -1,5 +1,4 @@
 import mne
-from circular_hist import circular_hist, circ_hist_norm
 from tensorpac import Pac
 from scipy.signal import detrend
 from scipy.signal.windows import tukey

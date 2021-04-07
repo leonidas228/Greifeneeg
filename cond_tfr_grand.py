@@ -188,8 +188,11 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
                           color="gray", alpha=0.8,
                           linewidth=10)
         axes[en_idx].set_title(cond_keys[en])
+        axes[en_idx].set_ylabel("Frequency (Hz)", fontsize=30)
+        axes[en_idx].set_xlabel("Time (s)", fontsize=30)
 
     suptitle_str = "LME parameters of {} spindle power, {} baseline".format(osc, baseline)
+    suptitle_str = "LME parameters of {} spindle power".format(osc)
     if sync_fact == "syncfact":
         suptitle_str += ", synchronicity tested"
     elif sync_fact == "nosyncfact":
@@ -199,7 +202,7 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
         suptitle_str += ""
     fig.suptitle(suptitle_str)
     fig.tight_layout()
-    fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}_{}.tif".format(baseline, osc, badsubjs, use_group, sync_fact, order_idx))
+    fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}_{}.png".format(baseline, osc, badsubjs, use_group, sync_fact, order_idx))
 
 
 # predictions
@@ -220,6 +223,8 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
                             color="gray", alpha=0.8,
                             linewidth=10)
         axes[cond_idx].set_title(exog_key)
+        axes[en_idx].set_ylabel("Frequency (Hz)", fontsize=30)
+        axes[en_idx].set_xlabel("Time (s)", fontsize=30)
 
     suptitle_str = "LME model predictions of {} spindle power, {} baseline".format(osc, baseline)
     if sync_fact == "syncfact":

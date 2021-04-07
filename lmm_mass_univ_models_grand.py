@@ -75,8 +75,8 @@ for bs_name, bad_subjs in use_badsubjs.items():
             elif sync_fact == "rsyncfact":
                 groups = df["Sync"]
                 vc_form = {"Subj": "0 + C(Subj)"} if use_group else None
-                #re_form = "0 + Stim"
-                re_form = None
+                re_form = "0 + Stim"
+                #re_form = None
                 formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
             else:
                 formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"

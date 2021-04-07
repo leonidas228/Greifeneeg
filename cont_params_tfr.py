@@ -3,6 +3,7 @@ import numpy as np
 from mne.time_frequency import read_tfrs
 from os.path import isdir
 import pickle
+from mne.stats import fdr_correction
 import matplotlib.pyplot as plt
 plt.ion()
 import matplotlib
@@ -22,25 +23,26 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-group_slope = True
-cont_var = "StimFreq"
-vmin, vmax = -2.5, 2.5
-vmin, vmax = -0.3, 0.3
+group_slope = False
+cont_var = "Fehler875"
+vmin, vmax = -5, 5
+#vmin, vmax = -0.3, 0.3
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
 oscs = ["SO", "deltO"]
 oscs = ["SO"]
-baseline = "logmean"
+baseline = "zscore"
 sync_facts = ["syncfact", "nosyncfact"]
 sync_facts = ["nosyncfact"]
 use_groups = ["group", "nogroup"]
-use_groups = ["group"]
+use_groups = ["nogroup"]
 balance_conds = False
 bootstrap = True
-use_badsubjs = ["all_subj"]
+use_badsubjs = ["no2,3,28"]
 #use_badsubjs = ["bad10"]
 #use_badsubjs = ["async"]
 
+fdr_cor = True
 toi = .308
 foi = 13
 # toi = .365
@@ -95,6 +97,10 @@ for osc in oscs:
 
                 pvals = data[2,].reshape(*dat_shape, order="F")
                 pvals[np.isnan(pvals)] = 1
+
+                if fdr_cor:
+                    _, pvals = fdr_correction(pvals)
+
                 mask = pvals<0.05
                 if "Intercept" in en:
                     mask = None

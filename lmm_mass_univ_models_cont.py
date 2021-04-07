@@ -38,49 +38,54 @@ elif isdir("/home/jeffhanna/"):
 proc_dir = root_dir+"proc/"
 
 stim_type = "eig"
-stim_type = "sham"
-stim_type = None
-cont_var = "EigFreq"
+cont_vars = ["Null", "FehlerEig", "Fehler75", "Fehler875"]
 
-group_slope = False
 n_jobs = 8
 chan = "central"
 baseline = "zscore"
 osc = "SO"
-use_groups = ["group", "nogroup"]
 use_groups = ["nogroup"]
-use_badsubjs = {"all_subj":[]}
+use_badsubjs = {"no2,3,28":["002","003","028"]}
 
-for bs_name, bad_subjs in use_badsubjs.items():
-    for use_group in use_groups:
-        tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
-        tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
-        if stim_type:
-            tfr = tfr["StimType=='{}'".format(stim_type)]
-        subjs = np.unique(tfr.metadata["Subj"].values)
-        # remove all subjects with missing conditions or not meeting synchronicity criterion
-        for bs in bad_subjs:
-            print("Removing subject {}".format(bs))
-            tfr = tfr["Subj!='{}'".format(bs)]
-        data = np.swapaxes(tfr.data[:,0],1,2)
-        if baseline == "mean":
-            data *= 1e+12
-        df = tfr.metadata.copy()
-        df["Brain"] = np.zeros(len(df),dtype=np.float64)
+for cont_var in cont_vars:
+    for bs_name, bad_subjs in use_badsubjs.items():
+        for use_group in use_groups:
+            tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
+            tfr = tfr["OscType=='{}' and PrePost=='Post'".format(osc)]
+            if stim_type:
+                tfr = tfr["StimType=='{}'".format(stim_type)]
+            subjs = np.unique(tfr.metadata["Subj"].values)
+            # remove all subjects with missing conditions or not meeting synchronicity criterion
+            for bs in bad_subjs:
+                print("Removing subject {}".format(bs))
+                tfr = tfr["Subj!='{}'".format(bs)]
+            data = np.swapaxes(tfr.data[:,0],1,2)
+            if baseline == "mean":
+                data *= 1e+12
+            df = tfr.metadata.copy()
+            df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
-        formula = "Brain ~ {}*C(Dur, Treatment('30s'))*C(StimType, Treatment('sham'))".format(cont_var)
-        outfile = "{}main_fits_{}_{}_{}_{}_cont_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, cont_var)
-        re_formula = None
-        if group_slope:
-            re_formula = "~{}".format(cont_var)
-            outfile = "{}main_fits_{}_{}_{}_{}_cont_{}_indslope.pickle".format(proc_dir, baseline, osc, bs_name, use_group, cont_var)
-        groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
-        md = smf.mixedlm(formula, df, groups=groups, re_formula=re_formula)
-        endog, exog, groups, exog_names, exog_re = md.endog, md.exog, md.groups, md.exog_names, md.exog_re
-        print(exog_names)
-        #main result
-        fits = mass_uv_lmm(data, endog, exog, groups, exog_re)
-        fits = {"exog_names":exog_names, "fits":fits}
-        with open(outfile, "wb") as f:
-            pickle.dump(fits, f)
-        del fits
+
+            outfile = "{}main_fits_{}_{}_{}_{}_cont_{}.pickle".format(proc_dir, baseline, osc, bs_name, use_group, cont_var)
+
+            groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
+
+            formula = "Brain ~ {}".format(cont_var)
+            if cont_var == "FehlerEig":
+                df["FehlerEig"] = (df["EigFreq"] - df["AvgSOFreq"]).abs()
+            elif cont_var == "Fehler75":
+                df["Fehler75"] = (df["EigFreq"] - 0.75).abs()
+            elif cont_var == "Fehler875":
+                df["Fehler875"] = (df["EigFreq"] - 0.875).abs()
+            elif cont_var == "Null":
+                formula = "Brain ~ 1"
+
+            md = smf.mixedlm(formula, df, groups=groups)
+            endog, exog, groups, exog_names, exog_re = md.endog, md.exog, md.groups, md.exog_names, md.exog_re
+            print(exog_names)
+            #main result
+            fits = mass_uv_lmm(data, endog, exog, groups, exog_re)
+            fits = {"exog_names":exog_names, "fits":fits}
+            with open(outfile, "wb") as f:
+                pickle.dump(fits, f)
+            del fits
