@@ -81,7 +81,7 @@ if sync_fact == "syncfact":
 elif sync_fact == "rsyncfact":
     groups = df["Sync"]
     vc_form = {"Subj": "0 + C(Subj)"} if use_group else None
-    re_form = "0 + Stim"
+    re_form = "0 + Stim*Dur"
     formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"
 else:
     formula = "Brain ~ C(StimType, Treatment('sham'))*C(Dur, Treatment('30s'))"

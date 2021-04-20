@@ -16,9 +16,15 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-method="hilbert"
+method="wavelet"
+baseline = "nobl"
+#baseline = "zscore"
+time_win = (150,700)
+#time_win = (50,600)
 
-infile = "{}ModIdx_{}.pickle".format(proc_dir, method)
+infile = "{}ModIdx_{}_{}_{}-{}ms.pickle".format(proc_dir, method, baseline,
+                                                *time_win)
+print(infile)
 df = pd.read_pickle(infile)
 
 for osc in ["SO"]:

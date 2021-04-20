@@ -2,6 +2,7 @@ import mne
 import numpy as np
 from mne.time_frequency import read_tfrs
 from mne.stats import fdr_correction
+from mne.stats.cluster_level import _find_clusters
 from os.path import isdir
 import pickle
 import matplotlib.pyplot as plt
@@ -34,15 +35,15 @@ cond_keys = {"Intercept":"",
              "C(StimType, Treatment('sham'))[T.fix]:C(Dur, Treatment('30s'))[T.5m]":"Fixed frequency 5m"
             }
 
-cond_exogs =   {"Sham 30s":["Intercept (sham30s)"],
-                "Eigenfrequency 30s":["Intercept (sham30s)", "Eigenfrequency"],
-                "Fixed frequency 30s":["Intercept (sham30s)", "Fixed frequency"],
-                "Sham 2m":["Intercept (sham30s)", "2m"],
-                "Eigenfrequency 2m":["Intercept (sham30s)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
-                "Fixed frequency 2m":["Intercept (sham30s)", "2m", "Fixed frequency", "Fixed frequency 2m"],
-                "Sham 5m":["Intercept (sham30s)", "5m"],
-                "Eigenfrequency 5m":["Intercept (sham30s)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
-                "Fixed frequency 5m":["Intercept (sham30s)", "5m", "Fixed frequency", "Fixed frequency 5m"]}
+cond_exogs =   {"Sham 30s":["Intercept (Sham 30s)"],
+                "Eigenfrequency 30s":["Intercept (Sham 30s)", "Eigenfrequency"],
+                "Fixed frequency 30s":["Intercept (Sham 30s)", "Fixed frequency"],
+                "Sham 2m":["Intercept (Sham 30s)", "2m"],
+                "Eigenfrequency 2m":["Intercept (Sham 30s)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
+                "Fixed frequency 2m":["Intercept (Sham 30s)", "2m", "Fixed frequency", "Fixed frequency 2m"],
+                "Sham 5m":["Intercept (Sham 30s)", "5m"],
+                "Eigenfrequency 5m":["Intercept (Sham 30s)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
+                "Fixed frequency 5m":["Intercept (Sham 30s)", "5m", "Fixed frequency", "Fixed frequency 5m"]}
 
 cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronised)"],
                 "Eigenfrequency 30s synchronised":["Intercept (sham30s synchronised)", "Eigenfrequency"],
@@ -103,7 +104,8 @@ elif baseline == "mean":
     vmin, vmax = -5, 100
 else:
     vmin, vmax = None, None
-fdr_cor = True
+fdr_cor = False
+tfce_cor = True
 
 if prepost:
     new_cond_keys = {k+":C(PrePost, Treatment('Pre'))[T.Post]":v+" Post-stimulation"
@@ -119,7 +121,7 @@ if sync_fact == "syncfact":
     cond_keys = {**cond_keys, **new_cond_keys}
     cond_exogs = cond_exogs_syncfact
 
-cond_keys["Intercept"] = "Intercept (sham30s"
+cond_keys["Intercept"] = "Intercept (Sham 30s"
 if sync_fact == "syncfact":
     cond_keys["Intercept"] += " synchronised"
 if prepost:
@@ -167,6 +169,10 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
             data[1, mf_idx] = mf.tvalues[exog_names.index(en)]
             data[2, mf_idx] = mf.pvalues[exog_names.index(en)]
 
+        dat = data[0,].reshape(*dat_shape, order="F")
+        dat[np.isnan(dat)] = 0
+        tfr_c.data[0,] = dat
+
         pvals = data[2,].reshape(*dat_shape, order="F")
         pvals[np.isnan(pvals)] = 1
         if fdr_cor:
@@ -177,10 +183,6 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
 
         if np.any(mask):
             np.save("{}sig_mask_{}.npy".format(proc_dir, cond_keys[en]), mask)
-
-        dat = data[0,].reshape(*dat_shape, order="F")
-        dat[np.isnan(dat)] = 0
-        tfr_c.data[0,] = dat
         tfr_c.plot(picks="central", axes=axes[en_idx], colorbar=False,
                    vmin=vmin, vmax=vmax, cmap="viridis", mask=mask,
                    mask_style="contour")
@@ -188,11 +190,19 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
                           color="gray", alpha=0.8,
                           linewidth=10)
         axes[en_idx].set_title(cond_keys[en])
-        axes[en_idx].set_ylabel("Frequency (Hz)", fontsize=30)
-        axes[en_idx].set_xlabel("Time (s)", fontsize=30)
+        if en_idx % 3 == 0:
+            axes[en_idx].set_ylabel("Frequency (Hz)", fontsize=30)
+        else:
+            axes[en_idx].set_ylabel("")
+            axes[en_idx].set_yticks([])
+        if en_idx >= 6:
+            axes[en_idx].set_xlabel("Time (s)", fontsize=30)
+        else:
+            axes[en_idx].set_xlabel("")
+            axes[en_idx].set_xticks([])
 
-    suptitle_str = "LME parameters of {} spindle power, {} baseline".format(osc, baseline)
-    suptitle_str = "LME parameters of {} spindle power".format(osc)
+    suptitle_str = "LME parameter of {} spindle power, {} baseline".format(osc, baseline)
+    suptitle_str = "LME estimated parameters of {} spindle power".format(osc)
     if sync_fact == "syncfact":
         suptitle_str += ", synchronicity tested"
     elif sync_fact == "nosyncfact":
@@ -226,13 +236,70 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
         axes[en_idx].set_ylabel("Frequency (Hz)", fontsize=30)
         axes[en_idx].set_xlabel("Time (s)", fontsize=30)
 
-    suptitle_str = "LME model predictions of {} spindle power, {} baseline".format(osc, baseline)
-    if sync_fact == "syncfact":
-        suptitle_str += ", synchronicity tested"
-    elif sync_fact == "nosyncfact":
-        suptitle_str += ", synchronicity not tested"
-    elif sync_fact == "rsyncfact":
-        suptitle_str += ", synchronicity as random effect"
+        if cond_idx % 3 == 0:
+            axes[cond_idx].set_ylabel("Frequency (Hz)", fontsize=30)
+        else:
+            axes[cond_idx].set_ylabel("")
+            axes[cond_idx].set_yticks([])
+        if cond_idx >= 6:
+            axes[cond_idx].set_xlabel("Time (s)", fontsize=30)
+        else:
+            axes[cond_idx].set_xlabel("")
+            axes[cond_idx].set_xticks([])
+
+    suptitle_str = "LME predictions of {} spindle power, {} baseline".format(osc, baseline)
+    suptitle_str = "LME predictions of {} spindle power".format(osc)
+    # if sync_fact == "syncfact":
+    #     suptitle_str += ", synchronicity tested"
+    # elif sync_fact == "nosyncfact":
+    #     suptitle_str += ", synchronicity not tested"
+    # elif sync_fact == "rsyncfact":
+    #     suptitle_str += ", synchronicity as random effect"
     fig.suptitle(suptitle_str)
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}_{}.tif".format(baseline, osc, badsubjs, use_group, sync_fact, order_idx))
+
+# # prediction subtractions
+# coe_keys = list(cond_exogs.keys())
+#
+# for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
+#     fig, axes = plt.subplots(3, 3, figsize=(38.4,21.6))
+#     axes = [ax for axe in axes for ax in axe]
+#     for cond_idx, exog_key in enumerate(coe_keys[param_idx:param_idx+9]):
+#         data = np.zeros(len(modfit))
+#         cond_vec = cond2vec(exog_names, cond_exogs[exog_key], keys_cond)
+#         for mf_idx, mf in enumerate(modfit):
+#             data[mf_idx] = mf.predict(cond_vec)
+#         data = data.reshape(*dat_shape, order="F")
+#         data[np.isnan(data)] = 0
+#         tfr_c.data[0,] = data
+#         tfr_c.plot(picks="central", axes=axes[cond_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis")
+#         axes[cond_idx].plot(tfr.times, evo_data[0,],
+#                             color="gray", alpha=0.8,
+#                             linewidth=10)
+#         axes[cond_idx].set_title(exog_key)
+#         axes[en_idx].set_ylabel("Frequency (Hz)", fontsize=30)
+#         axes[en_idx].set_xlabel("Time (s)", fontsize=30)
+#
+#         if cond_idx % 3 == 0:
+#             axes[cond_idx].set_ylabel("Frequency (Hz)", fontsize=30)
+#         else:
+#             axes[cond_idx].set_ylabel("")
+#             axes[cond_idx].set_yticks([])
+#         if cond_idx >= 6:
+#             axes[cond_idx].set_xlabel("Time (s)", fontsize=30)
+#         else:
+#             axes[cond_idx].set_xlabel("")
+#             axes[cond_idx].set_xticks([])
+#
+#     suptitle_str = "LME predictions of {} spindle power, {} baseline".format(osc, baseline)
+#     suptitle_str = "LME predictions of {} spindle power".format(osc)
+#     # if sync_fact == "syncfact":
+#     #     suptitle_str += ", synchronicity tested"
+#     # elif sync_fact == "nosyncfact":
+#     #     suptitle_str += ", synchronicity not tested"
+#     # elif sync_fact == "rsyncfact":
+#     #     suptitle_str += ", synchronicity as random effect"
+#     fig.suptitle(suptitle_str)
+#     fig.tight_layout()
+#     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}_{}.tif".format(baseline, osc, badsubjs, use_group, sync_fact, order_idx))

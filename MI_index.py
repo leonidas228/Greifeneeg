@@ -21,13 +21,15 @@ osc_types = ["SO", "deltO"]
 #osc_types = ["SO"]
 sfreq = 100.
 phase_freqs = [(0.16, 1.25),(1.25, 4)]
-power_freqs = (13, 16)
+power_freqs = (12, 18)
 conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
-osc_cuts = [(-1.25,1.25),(-.75,.75)]
 osc_cuts = [(.15,.7),(-.75,.75)]
 method = "wavelet"
 exclude = ["002", "003", "028"]
+baseline = (-2.35, -1.5)
+baseline = None
+f_amp=np.linspace(power_freqs[0],power_freqs[1],10)
 
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
                       preload=True)
@@ -39,9 +41,7 @@ osc_types = ["SO", "deltO"]
 epos = []
 dfs = []
 for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
-    p = Pac(f_pha=(pf[0], pf[1]), #f_pha=np.linspace(pf[0],pf[1],10),
-            f_amp=np.linspace(power_freqs[0],power_freqs[1],10),
-            dcomplex=method)
+    p = Pac(f_pha=pf, f_amp=f_amp, dcomplex=method)
 
     this_epo = epo["OscType == '{}'".format(osc)]
     this_df = this_epo.metadata.copy()
@@ -51,8 +51,19 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
     phase = p.filter(this_epo.info["sfreq"], data, ftype="phase", n_jobs=n_jobs)
     power = p.filter(this_epo.info["sfreq"], data, ftype="amplitude", n_jobs=n_jobs)
 
-    power = power[...,cut_inds[0]:cut_inds[1]]#.mean(0)
-    phase = phase[...,cut_inds[0]:cut_inds[1]]#.mean(0)
+    power = power[...,cut_inds[0]:cut_inds[1]]
+    phase = phase[...,cut_inds[0]:cut_inds[1]]
+
+    if baseline:
+        base_text = "zscore"
+        base_inds = this_epo.time_as_index((baseline[0], baseline[1]))
+        bl = power[...,base_inds[0]:base_inds[1]]
+        bl_mu = bl.mean(axis=-1, keepdims=True)
+        bl_std = bl.std(axis=-1, keepdims=True)
+        breakpoint()
+        power = (power - bl_mu) / bl_std
+    else:
+        base_text = "nobl"
 
     p.idpac = (1,0,0)
     mvl = p.fit(phase, power)
@@ -87,4 +98,7 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
 
 new_df = pd.concat(dfs, ignore_index=True)
 
-new_df.to_pickle("{}ModIdx_{}.pickle".format(proc_dir, method))
+new_df.to_pickle("{}ModIdx_{}_{}_{:.0f}-{:.0f}ms.pickle".format(proc_dir, method,
+                                                                base_text,
+                                                                osc_cuts[0][0]*1000,
+                                                                osc_cuts[0][1]*1000))
