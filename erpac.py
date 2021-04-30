@@ -3,6 +3,7 @@ from mne.stats.cluster_level import _find_clusters
 from joblib import Parallel, delayed
 from mne.stats import fdr_correction
 from tensorpac import EventRelatedPac as ERPAC
+from mne.time_frequency import tfr_morlet
 #from tensorpac import PreferredPhase as PP
 import pandas as pd
 import numpy as np
@@ -13,7 +14,7 @@ import pickle
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
-        'size'   : 20}
+        'size'   : 28}
 matplotlib.rc('font', **font)
 
 def do_erpac(ep, epo, cut, baseline=None, fit_args={"mcp":"fdr", "p":0.05,
@@ -21,7 +22,6 @@ def do_erpac(ep, epo, cut, baseline=None, fit_args={"mcp":"fdr", "p":0.05,
                                                     "method":"circular",
                                                     "n_perm":1000}):
     data = epo.get_data()[:,0,] * 1e+6
-
     phase = ep.filter(epo.info["sfreq"], data, ftype="phase", n_jobs=n_jobs)
     power = ep.filter(epo.info["sfreq"], data, ftype="amplitude", n_jobs=n_jobs)
 
@@ -67,9 +67,18 @@ def tfce_correct(data, tfce_thresh=None):
     out_data = np.zeros_like(data) + pos_clusts - neg_clusts
     return out_data
 
-def permute(perm_idx, a_n, epo_inds, phase, power, fit_args):
+def permute(perm_idx, a_n, epo_inds, phase, power, fit_args, subj_inds=None):
     print("Permutation {} of {}".format(perm_idx, n_perm))
-    np.random.shuffle(epo_inds)
+    # if we have group as a factor, we shuffle data only within subjects
+    if subj_inds is not None:
+        subjs = list(np.unique(subj_inds))
+        for subj in subjs:
+            subj_inds = subj_inds==subj
+            these_epo_inds = epo_inds[subj_inds].copy()
+            np.random.shuffle(these_epo_inds)
+            epo_inds[subj_inds] = these_epo_inds
+        else:
+            np.random.shuffle(epo_inds)
     erpac_a = ep.fit(phase[:,epo_inds[:a_n],], power[:,epo_inds[:a_n],], **fit_args)
     erpac_b = ep.fit(phase[:,epo_inds[a_n:],], power[:,epo_inds[a_n:],], **fit_args)
     erpac_z, _ = compare_rho(erpac_a, a_n, erpac_b, len(epo_inds)-a_n,
@@ -86,6 +95,8 @@ def do_erpac_perm(epo_a, epo_b, cut, baseline=None, n_perm=1000,
     epo_inds = np.arange(len(data))
     perm_maxima, perm_minima = np.zeros(n_perm), np.zeros(n_perm)
     a_n = len(epo_a)
+    subj_inds = np.hstack((epo_a.metadata["Subj"].values,
+                           epo_b.metadata["Subj"].values))
 
     phase = ep.filter(cond_epo.info["sfreq"], data, ftype="phase", n_jobs=n_jobs)
     power = ep.filter(cond_epo.info["sfreq"], data, ftype="amplitude", n_jobs=n_jobs)
@@ -103,7 +114,8 @@ def do_erpac_perm(epo_a, epo_b, cut, baseline=None, n_perm=1000,
     times = epo.times[cut_inds[0]:cut_inds[1]]
 
     results = Parallel(n_jobs=1, verbose=10)(delayed(permute)(
-                       i, a_n, epo_inds, phase, power, fit_args) for i in range(n_perm))
+                       i, a_n, epo_inds, phase, power, fit_args, subj_inds)
+                       for i in range(n_perm))
 
     return results
 
@@ -118,11 +130,11 @@ chan = "central"
 osc_types = ["SO", "deltO"]
 osc_types = ["SO"]
 sfreq = 200.
-phase_freqs = [(0.5, 1.25),(1.25, 4)]
+phase_freqs = {"SO":(0.5, 1.25),"deltO":(1.25, 4)}
 power_freqs = (5, 25)
 conds = ["fix"]
 durs = ["30s", "2m", "5m"]
-osc_cuts = [(-1.5,1.5),(-.75,.75)]
+osc_cuts = {"SO":(-1.5,1.5),"deltO":(-.75,.75)}
 baseline = (-2.35, -1.5)
 #baseline = None
 method = "wavelet"
@@ -130,6 +142,7 @@ exclude = ["002", "003", "028"]
 p = 0.05
 n_perm = 1000
 tfce_thresh = dict(start=0, step=0.2)
+recalc = False
 
 f_amp = np.linspace(power_freqs[0],power_freqs[1],50)
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
@@ -140,8 +153,10 @@ epo.resample(sfreq, n_jobs="cuda")
 
 epos = []
 dfs = []
-for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
+for osc in osc_types:
     osc_epo = epo["OscType == '{}'".format(osc)]
+    pf = phase_freqs[osc]
+    osc_cut = osc_cuts[osc]
     ep = ERPAC(f_pha=pf, f_amp=f_amp, dcomplex=method)
     sham_epo = osc_epo["StimType == 'sham'"]
     sham_erpac, times, sham_n = do_erpac(ep, sham_epo, osc_cut, baseline=baseline)
@@ -158,42 +173,50 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
         erpac_c = _find_clusters(erpac_z, threshold=tfce_thresh)
         erpac_c = np.reshape(erpac_c[1], erpac_z.shape)
 
-        ep.pacplot(erpac_c, times, ep.yvec)
+        #ep.pacplot(erpac_c, times, ep.yvec)
 
-        # try:
-        #     results = np.load("{}{}_erpac_perm.npy".format(proc_dir, cond))
-        # except:
-        #     results = do_erpac_perm(sham_epo, cond_epo, osc_cut, baseline=baseline)
-        #     results = np.array(results)
-        #     np.save("{}{}_erpac_perm.npy".format(proc_dir, cond), results)
+        if recalc:
+            results = do_erpac_perm(sham_epo, cond_epo, osc_cut, baseline=baseline)
+            results = np.array(results)
+            np.save("{}{}_erpac_perm.npy".format(proc_dir, cond), results)
+        else:
+            results = np.load("{}{}_erpac_perm.npy".format(proc_dir, cond))
 
-        # pos_thresh_val = np.quantile(results, 1-p)
-        # erpac_pos_mask = erpac_c > pos_thresh_val
-        # neg_thresh_val = np.quantile(results, p)
-        # erpac_neg_mask = erpac_c < neg_thresh_val
-        # erpac_mask = erpac_z.copy()
-        # erpac_mask[~(erpac_pos_mask | erpac_neg_mask)] = 0
+        pos_thresh_val = np.quantile(results, 1-p)
+        erpac_pos_mask = erpac_c > pos_thresh_val
+        neg_thresh_val = np.quantile(results, p)
+        erpac_neg_mask = erpac_c < neg_thresh_val
+        erpac_mask = ~(erpac_pos_mask | erpac_neg_mask)
 
-        # plt.figure(figsize=(38.4,21.6))
-        # # ep.pacplot(erpac.squeeze(), times, ep.yvec,
-        # #            pvalues=ep.pvalues.squeeze(), p=p)
+        # make mne tfr template for plotting
+        e = epo[0].crop(tmin=osc_cut[0], tmax=osc_cut[1]-1/sfreq)
+        tfr = tfr_morlet(e, f_amp[:-1], n_cycles=5, average=False, return_itc=False)
+        tfr = tfr.average()
+
+        fig, ax = plt.subplots(figsize=(38.4,21.6))
+        # ep.pacplot(erpac.squeeze(), times, ep.yvec,
+        #            pvalues=ep.pvalues.squeeze(), p=p)
         # ep.pacplot(erpac_mask.squeeze(), times, ep.yvec)
+        tfr.data[0,:,:] = erpac_z.squeeze()
+        tfr.plot(mask=erpac_mask, mask_style="contour", cmap="inferno",
+                 vmin=-3, vmax=3, axes=ax, picks="central")
         # plt.title("{} ERPAC {}, phase at {}-{}Hz ({} transform)".format(osc,
         #                                                                 cond,
         #                                                                 pf[0],
         #                                                                 pf[1],
         #                                                                 method))
-        # plt.ylabel("Hz", fontdict={"size":24})
-        # plt.xlabel("Time (s)", fontdict={"size":24})
-        #
-        # cut_inds = epo.time_as_index((osc_cut[0], osc_cut[1]))
-        # evo = cond_epo.average().data[0,cut_inds[0]:cut_inds[1]]
-        # evo = (evo - evo.min())/(evo.max()-evo.min())
-        # evo = evo*3 + 13
-        #
-        # plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
+        plt.ylabel("Hz", fontdict={"size":36})
+        plt.xlabel("Time (s)", fontdict={"size":36})
 
-        #plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
+        cut_inds = epo.time_as_index((osc_cut[0], osc_cut[1]))
+        evo = cond_epo.average().data[0,cut_inds[0]:cut_inds[1]]
+        evo = (evo - evo.min())/(evo.max()-evo.min())
+        evo = evo*5 + 13
+
+        plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
+        plt.suptitle("ERPAC for {}, normalised difference: {} frequency - sham".format(osc, cond))
+        plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
+        plt.savefig("../images/ERPAC_{}_{}_{}.svg".format(osc, cond, method))
 
         # # get clusters of significant points and examine them at maxima
         # # (p-value minima)

@@ -19,9 +19,9 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-iter_num = 256
+iter_num = 128
 baseline = "zscore"
-osc = "SO"
+osc = "deltO"
 sync_fact = "rsyncfact"
 bad_subjs = "no2,3,28"
 use_group = "group"

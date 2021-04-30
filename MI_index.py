@@ -21,10 +21,10 @@ osc_types = ["SO", "deltO"]
 #osc_types = ["SO"]
 sfreq = 100.
 phase_freqs = [(0.16, 1.25),(1.25, 4)]
-power_freqs = (12, 18)
+power_freqs = (15, 18)
 conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
-osc_cuts = [(.15,.7),(-.75,.75)]
+osc_cuts = [(.15,.4),(-.75,.75)]
 method = "wavelet"
 exclude = ["002", "003", "028"]
 baseline = (-2.35, -1.5)
@@ -98,7 +98,10 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
 
 new_df = pd.concat(dfs, ignore_index=True)
 
-new_df.to_pickle("{}ModIdx_{}_{}_{:.0f}-{:.0f}ms.pickle".format(proc_dir, method,
-                                                                base_text,
-                                                                osc_cuts[0][0]*1000,
-                                                                osc_cuts[0][1]*1000))
+new_df.to_pickle("{}ModIdx_{}_{}_{}-{}Hz_{:.0f}-{:.0f}ms.pickle".format(proc_dir,
+                                                                        method,
+                                                                        base_text,
+                                                                        power_freqs[0],
+                                                                        power_freqs[1],
+                                                                        osc_cuts[0][0]*1000,
+                                                                        osc_cuts[0][1]*1000))

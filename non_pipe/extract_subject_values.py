@@ -21,12 +21,14 @@ method = "wavelet"
 conds = ["sham", "eig", "fix"]
 bad_subjs = ["002", "003", "028"]
 baseline = "nobl"
-time_win = (150, 700)
+time_win = (150, 400)
+freq_win = (15, 18)
 
 sig_mask = np.load("{}sig_mask_Fixed frequency.npy".format(proc_dir))
 
-infile = "{}ModIdx_{}_{}_{}-{}ms.pickle".format(proc_dir, method, baseline,
-                                                *time_win)
+infile = "{}ModIdx_{}_{}_{}-{}Hz_{}-{}ms.pickle".format(proc_dir, method,
+                                                        baseline, *freq_win,
+                                                        *time_win)
 df_pac = pd.read_pickle(infile)
 pac_subjs = list(df_pac["Subj"].unique())
 
@@ -84,7 +86,8 @@ df = pd.DataFrame.from_dict(df_dict)
 #     df_norm[col] = (df_norm[col]-df_norm[col].mean())/df_norm[col].std()
 # df = df_norm
 
-df.to_csv("../indiv_data/indiv_measures_{}_{}-{}.csv".format(baseline,
+df.to_csv("../indiv_data/indiv_measures_{}_{}-{}Hz_{}-{}.csv".format(baseline,
+                                                             *freq_win,
                                                              *time_win))
 
 

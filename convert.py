@@ -14,7 +14,7 @@ raw_dir = root_dir+"raw/" # get raw files from here
 proc_dir = root_dir+"proc/" # save the processed files here
 filelist = listdir(raw_dir) # get list of all files in raw directory
 proclist = listdir(proc_dir) # and in proc directory
-overwrite = False # skip
+overwrite = True # skip
 
 for filename in filelist: # cycle through all files in raw directory
     this_match = re.search("NAP_(\d{3})_T(\d)(b|c?).vhdr", filename)
@@ -26,6 +26,7 @@ for filename in filelist: # cycle through all files in raw directory
             print("Already exists. Skipping.")
             continue
         raw = mne.io.read_raw_brainvision(raw_dir+filename) # convert
+        breakpoint()
         if "NAP_{}_T{}_2.vhdr".format(subj, tag) in filelist:
             print("Caught a _2 version.")
             raw_2 = mne.io.read_raw_brainvision(raw_dir+"NAP_{}_T{}_2.vhdr".format(subj, tag))

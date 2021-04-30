@@ -5,6 +5,7 @@ from mne.time_frequency import read_tfrs
 from os.path import isdir
 import pickle
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp2d
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
@@ -33,7 +34,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-cond_keys = {"Intercept":"",
+cond_keys = {"Intercept":"Sham 30s",
              "C(StimType, Treatment('sham'))[T.eig]":"Eigenfrequency",
              "C(StimType, Treatment('sham'))[T.fix]":"Fixed frequency",
              "C(Dur, Treatment('30s'))[T.2m]":"2m",
@@ -44,15 +45,15 @@ cond_keys = {"Intercept":"",
              "C(StimType, Treatment('sham'))[T.fix]:C(Dur, Treatment('30s'))[T.5m]":"Fixed frequency 5m"
             }
 
-cond_exogs =   {"Sham 30s":["Intercept (sham30s)"],
-                "Eigenfrequency 30s":["Intercept (sham30s)", "Eigenfrequency"],
-                "Fixed frequency 30s":["Intercept (sham30s)", "Fixed frequency"],
-                "Sham 2m":["Intercept (sham30s)", "2m"],
-                "Eigenfrequency 2m":["Intercept (sham30s)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
-                "Fixed frequency 2m":["Intercept (sham30s)", "2m", "Fixed frequency", "Fixed frequency 2m"],
-                "Sham 5m":["Intercept (sham30s)", "5m"],
-                "Eigenfrequency 5m":["Intercept (sham30s)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
-                "Fixed frequency 5m":["Intercept (sham30s)", "5m", "Fixed frequency", "Fixed frequency 5m"]}
+cond_exogs =   {"Sham 30s":["Intercept (Sham 30s)"],
+                "Eigenfrequency 30s":["Intercept (Sham 30s)", "Eigenfrequency"],
+                "Fixed frequency 30s":["Intercept (Sham 30s)", "Fixed frequency"],
+                "Sham 2m":["Intercept (Sham 30s)", "2m"],
+                "Eigenfrequency 2m":["Intercept (Sham 30s)", "2m", "Eigenfrequency", "Eigenfrequency 2m"],
+                "Fixed frequency 2m":["Intercept (Sham 30s)", "2m", "Fixed frequency", "Fixed frequency 2m"],
+                "Sham 5m":["Intercept (Sham 30s)", "5m"],
+                "Eigenfrequency 5m":["Intercept (Sham 30s)", "5m", "Eigenfrequency", "Eigenfrequency 5m"],
+                "Fixed frequency 5m":["Intercept (Sham 30s)", "5m", "Fixed frequency", "Fixed frequency 5m"]}
 
 cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronised)"],
                 "Eigenfrequency 30s synchronised":["Intercept (sham30s synchronised)", "Eigenfrequency"],
@@ -87,7 +88,9 @@ if baseline == "zscore":
 elif baseline == "logmean":
     vmin, vmax = -.35, .35
 tfce_thresh = dict(start=0, step=0.2)
-perm_thresh = 92
+perm_thresh = .05
+cmap = "seismic"
+interp = True
 
 if sync_fact == "syncfact":
     # adjust the keys
@@ -97,7 +100,7 @@ if sync_fact == "syncfact":
     cond_keys = {**cond_keys, **new_cond_keys}
     cond_exogs = cond_exogs_syncfact
 
-cond_keys["Intercept"] = "Intercept (sham30s"
+cond_keys["Intercept"] = "Intercept (Sham 30s"
 if sync_fact == "syncfact":
     cond_keys["Intercept"] += " synchronised"
 cond_keys["Intercept"] += ")"
@@ -128,7 +131,7 @@ ev_min, ev_max = evo.data.min(), evo.data.max()
 # get osc ERP and normalise
 evo_data = evo.data
 evo_data = (evo_data - ev_min) / (ev_max - ev_min)
-evo_data = evo_data*4 + 12
+evo_data = evo_data*5 + 12
 
 stat_conds = list(cond_keys.keys())
 tfr_c = tfr_avg.copy()
@@ -141,14 +144,20 @@ with open("{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline,
 
 exog_names = fits["exog_names"]
 modfit = fits["fits"]
+cks = list(cond_keys.keys())
 for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
     fig, axes = plt.subplots(3, 3, figsize=(38.4,21.6))
     t_fig, t_axes = plt.subplots(3, 3, figsize=(38.4,21.6))
-    tfce_fig, tfce_axes = plt.subplots(3, 3, figsize=(38.4,21.6))
+
+    ax_w = 4
+    mos_array = [["0"]*ax_w + ["1"]*ax_w + ["2"]*ax_w + ["cbar"],
+                 ["3"]*ax_w + ["4"]*ax_w + ["5"]*ax_w + ["cbar"],
+                 ["6"]*ax_w + ["7"]*ax_w + ["8"]*ax_w + ["cbar"]]
+    tfce_fig, tfce_axes = plt.subplot_mosaic(mos_array, figsize=(38.4,21.6))
+
     axes = [ax for axe in axes for ax in axe]
     t_axes = [ax for axe in t_axes for ax in axe]
-    tfce_axes = [ax for axe in tfce_axes for ax in axe]
-    for en_idx,en in enumerate(list(cond_keys.keys())[param_idx:param_idx+9]):
+    for en_idx,en in enumerate(cks[param_idx:param_idx+9]):
         data = np.zeros((3, len(modfit)))
         for mf_idx, mf in enumerate(modfit):
             data[0, mf_idx] = mf.params[exog_names.index(en)]
@@ -184,58 +193,69 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
                           linewidth=10)
         t_axes[en_idx].set_title(cond_keys[en])
 
-        # # clustered t values
-        # tfr_c.data[0,] = tfce_correct(dat, tfce_thresh)
-        # tfr_c.plot(picks="central", axes=tfce_axes[en_idx], colorbar=False,
-        #            vmin=vmin*3, vmax=vmax*3, cmap="viridis")
-        # tfce_axes[en_idx].plot(tfr.times, evo_data[0,],
-        #                   color="gray", alpha=0.8,
-        #                   linewidth=10)
-        # tfce_axes[en_idx].set_title(cond_keys[en])
-
 
         ## parameters corrected for multiple comparisons
         # positive and negative thresholds
-        pos_thresh = np.percentile(minmax_ts[en]["max"],perm_thresh)
-        neg_thresh = np.percentile(minmax_ts[en]["min"],100-perm_thresh)
+        pos_thresh = np.quantile(minmax_ts[en]["max"], 1-perm_thresh)
+        neg_thresh = np.quantile(minmax_ts[en]["min"], perm_thresh)
 
         dat = data[0,].reshape(*dat_shape, order="F")
         t_dat = tfce_correct(data[1,].reshape(*dat_shape, order="F"),tfce_thresh)
         dat[np.isnan(dat)] = 0
+        if interp:
+            x = np.arange(dat.shape[1])
+            y = np.arange(dat.shape[0])
+            interper = interp2d(x, y, dat)
+            dat = interper(x, y)
+
         mask_pos = t_dat > pos_thresh
         mask_neg = t_dat < neg_thresh
         mask = mask_pos + mask_neg
+
+        if cond_keys[en] == "Fixed frequency":
+            sig_mask = mask # we'll need this for the figure later down
+
         tfr_c.data[0,] = dat
-        tfr_c.plot(picks="central", axes=tfce_axes[en_idx], colorbar=False,
-                   vmin=vmin, vmax=vmax, cmap="viridis", mask=mask,
+        tfr_c.plot(picks="central", axes=tfce_axes[str(en_idx)], colorbar=False,
+                   vmin=vmin, vmax=vmax, cmap=cmap, mask=mask,
                    mask_style="contour")
-        tfce_axes[en_idx].plot(tfr.times, evo_data[0,],
+        tfce_axes[str(en_idx)].plot(tfr.times, evo_data[0,],
                           color="gray", alpha=0.8,
                           linewidth=10)
-        tfce_axes[en_idx].set_title(cond_keys[en])
+        tfce_axes[str(en_idx)].set_title(cond_keys[en])
 
-    fig.suptitle("{}_{}_{}_{}".format(osc, badsubjs, use_group, sync_fact))
-    if sync_fact == "syncfact":
-        fig.suptitle("LME model parameters of {} spindle power, synchronicity tested".format(osc))
-        t_fig.suptitle("LME t-values of {} spindle power, synchronicity tested".format(osc))
-        tfce_fig.suptitle("LME model parameters (corrected p<{}) of {} spindle power, synchronicity tested".format((100-perm_thresh)/100, osc))
-    else:
-        fig.suptitle("LME model parameters of {} spindle power, synchronicity not tested".format(osc))
-        t_fig.suptitle("LME t-values of {} spindle power, synchronicity not tested".format(osc))
-        tfce_fig.suptitle("LME model parameters (corrected p<{}) of {} spindle power, synchronicity not tested".format((100-perm_thresh)/100, osc))
-    fig.tight_layout()
-    t_fig.tight_layout()
-    tfce_fig.tight_layout()
-    fig.savefig("../images/lmmtfr_grand_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
-    t_fig.savefig("../images/lmmtfr_grand_t_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
-    tfce_fig.savefig("../images/lmmtfr_grand_tfce_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
+        norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+        sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
+        plt.colorbar(sm, cax=tfce_axes["cbar"])
+        tfce_axes["cbar"].set_ylabel("Z-score from baseline", fontsize=28)
 
+        if en_idx % 3 == 0:
+            tfce_axes[str(en_idx)].set_ylabel("Frequency (Hz)", fontsize=30)
+        else:
+            tfce_axes[str(en_idx)].set_ylabel("")
+            tfce_axes[str(en_idx)].set_yticks([])
+        if en_idx >= 6:
+            tfce_axes[str(en_idx)].set_xlabel("Time (s)", fontsize=30)
+        else:
+            tfce_axes[str(en_idx)].set_xlabel("")
+            tfce_axes[str(en_idx)].set_xticks([])
+
+        suptitle_str = "LME estimated parameters of {} spindle power".format(osc)
+        plt.suptitle(suptitle_str)
+        plt.tight_layout()
+        tfce_fig.savefig("../images/lmmtfr_grand_tfce_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
+        tfce_fig.savefig("../images/lmmtfr_grand_tfce_{}_{}_{}_{}_{}.svg".format(osc, badsubjs, use_group, sync_fact, order_idx))
 
 # predictions
+pred_cmap = "inferno"
+pred_vmin, pred_vmax = 0, 4
 coe_keys = list(cond_exogs.keys())
 for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
-    fig, axes = plt.subplots(3, 3, figsize=(38.4,21.6))
-    axes = [ax for axe in axes for ax in axe]
+    ax_w = 4
+    mos_array = [["0"]*ax_w + ["1"]*ax_w + ["2"]*ax_w + ["cbar"],
+                 ["3"]*ax_w + ["4"]*ax_w + ["5"]*ax_w + ["cbar"],
+                 ["6"]*ax_w + ["7"]*ax_w + ["8"]*ax_w + ["cbar"]]
+    fig, axes = plt.subplot_mosaic(mos_array, figsize=(38.4,21.6))
     for cond_idx, exog_key in enumerate(coe_keys[param_idx:param_idx+9]):
         data = np.zeros(len(modfit))
         cond_vec = cond2vec(exog_names, cond_exogs[exog_key], keys_cond)
@@ -244,15 +264,93 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
         data = data.reshape(*dat_shape, order="F")
         data[np.isnan(data)] = 0
         tfr_c.data[0,] = data
-        tfr_c.plot(picks="central", axes=axes[cond_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis")
-        axes[cond_idx].plot(tfr.times, evo_data[0,],
+        tfr_c.plot(picks="central", axes=axes[str(cond_idx)], colorbar=False,
+                   vmin=vmin, vmax=vmax, cmap=pred_cmap)
+        axes[str(cond_idx)].plot(tfr.times, evo_data[0,],
                             color="gray", alpha=0.8,
                             linewidth=10)
-        axes[cond_idx].set_title(exog_key)
+        axes[str(cond_idx)].set_title(exog_key)
 
-    if sync_fact == "syncfact":
-        fig.suptitle("LME model predictions of {} spindle power, synchronicity tested".format(osc))
-    else:
-        fig.suptitle("LME model predictions of {} spindle power, synchronicity not tested".format(osc))
+        norm = matplotlib.colors.Normalize(vmin=pred_vmin, vmax=pred_vmax)
+        sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=pred_cmap)
+        plt.colorbar(sm, cax=axes["cbar"])
+        axes["cbar"].set_ylabel("Z-score from baseline", fontsize=28)
+
+        if cond_idx % 3 == 0:
+            axes[str(cond_idx)].set_ylabel("Frequency (Hz)", fontsize=30)
+        else:
+            axes[str(cond_idx)].set_ylabel("")
+            axes[str(cond_idx)].set_yticks([])
+        if cond_idx >= 6:
+            axes[str(cond_idx)].set_xlabel("Time (s)", fontsize=30)
+        else:
+            axes[str(cond_idx)].set_xlabel("")
+            axes[str(cond_idx)].set_xticks([])
+
+    fig.suptitle("LME model predictions of {} spindle power".format(osc))
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
+    fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.svg".format(osc, badsubjs, use_group, sync_fact, order_idx))
+
+# 'nice' figure
+pred_cmap = "inferno"
+pred_vmin, pred_vmax = 0, 4
+ax_w = 4
+mos_array = [["blank1"]*ax_w + ["fix"]*ax_w + ["fix-sham"]*ax_w + ["cbar"],
+             ["sham"]*ax_w + ["fix"]*ax_w + ["fix-sham"]*ax_w + ["cbar"],
+             ["sham"]*ax_w + ["eig"]*ax_w + ["eig-sham"]*ax_w + ["cbar"],
+             ["blank2"]*ax_w + ["eig"]*ax_w + ["eig-sham"]*ax_w + ["cbar"]]
+fig, axes = plt.subplot_mosaic(mos_array, figsize=(38.4,21.6))
+coe_keys = {"sham":["Intercept (Sham 30s)"],
+            "fix":["Intercept (Sham 30s)", "Fixed frequency"],
+            "eig":["Intercept (Sham 30s)", "Eigenfrequency"],
+            "fix-sham":["Fixed frequency"],
+            "eig-sham":["Eigenfrequency"]}
+for k,v in coe_keys.items():
+    mask = sig_mask if k == "fix-sham" else np.zeros(mask.shape, dtype="bool")
+    data = np.zeros(len(modfit))
+    cond_vec = cond2vec(exog_names, v, keys_cond)
+    for mf_idx, mf in enumerate(modfit):
+        data[mf_idx] = mf.predict(cond_vec)
+    data = data.reshape(*dat_shape, order="F")
+    data[np.isnan(data)] = 0
+    tfr_c.data[0,] = data
+    tfr_c.plot(picks="central", axes=axes[k], colorbar=False,
+               vmin=vmin, vmax=vmax, cmap=pred_cmap, mask=mask, mask_style="contour")
+    axes[k].plot(tfr.times, evo_data[0,],
+                 color="gray", alpha=0.8,
+                 linewidth=10)
+    axes[k].set_title(exog_key)
+
+    norm = matplotlib.colors.Normalize(vmin=pred_vmin, vmax=pred_vmax)
+    sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=pred_cmap)
+    plt.colorbar(sm, cax=axes["cbar"])
+    axes["cbar"].set_ylabel("Z-score from baseline", fontsize=28)
+
+axes["sham"].set_ylabel("Frequency (Hz)", fontsize=30)
+axes["sham"].set_xlabel("Time (s)", fontsize=30)
+axes["fix-sham"].set_yticks([])
+axes["eig-sham"].set_yticks([])
+axes["fix"].set_xticks([])
+axes["fix"].set_xlabel("")
+axes["fix"].set_ylabel("Frequency (Hz)", fontsize=30)
+axes["fix-sham"].set_xticks([])
+axes["fix-sham"].set_xlabel("")
+axes["fix-sham"].set_ylabel("")
+axes["eig"].set_xlabel("Time (s)", fontsize=30)
+axes["eig"].set_ylabel("Frequency (Hz)", fontsize=30)
+axes["eig-sham"].set_xlabel("Time (s)", fontsize=30)
+axes["eig-sham"].set_ylabel("")
+axes["blank1"].axis("off")
+axes["blank2"].axis("off")
+axes["sham"].set_title("Sham")
+axes["eig"].set_title("Eigen frequency")
+axes["fix"].set_title("Fixed frequency")
+axes["fix-sham"].set_title("Fixed - Sham")
+axes["eig-sham"].set_title("Eigen - Sham")
+
+axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc))
+fig.suptitle("")
+fig.tight_layout()
+fig.savefig("../images/lmmtfr_fig1_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
+fig.savefig("../images/lmmtfr_fig1_{}_{}_{}_{}_{}.svg".format(osc, badsubjs, use_group, sync_fact, order_idx))

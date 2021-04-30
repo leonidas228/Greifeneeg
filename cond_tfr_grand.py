@@ -89,7 +89,7 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
-osc = "SO"
+osc = "deltO"
 baseline = "zscore"
 sync_fact = "rsyncfact"
 use_group = "group"
@@ -104,8 +104,7 @@ elif baseline == "mean":
     vmin, vmax = -5, 100
 else:
     vmin, vmax = None, None
-fdr_cor = False
-tfce_cor = True
+fdr_cor = True
 
 if prepost:
     new_cond_keys = {k+":C(PrePost, Treatment('Pre'))[T.Post]":v+" Post-stimulation"
@@ -228,7 +227,8 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
         data = data.reshape(*dat_shape, order="F")
         data[np.isnan(data)] = 0
         tfr_c.data[0,] = data
-        tfr_c.plot(picks="central", axes=axes[cond_idx], colorbar=False, vmin=vmin, vmax=vmax, cmap="viridis")
+        tfr_c.plot(picks="central", axes=axes[cond_idx], colorbar=False,
+                   vmin=vmin, vmax=vmax, cmap="viridis")
         axes[cond_idx].plot(tfr.times, evo_data[0,],
                             color="gray", alpha=0.8,
                             linewidth=10)
