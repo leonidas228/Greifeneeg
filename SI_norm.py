@@ -7,6 +7,7 @@ import statsmodels.formula.api as smf
 import seaborn as sns
 from circular_hist import circ_hist_norm
 import matplotlib.pyplot as plt
+from pycircstat.tests import watson_williams, vtest, kuiper
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
@@ -27,6 +28,11 @@ elif isdir("/home/jeff"):
 proc_dir = root_dir+"proc/"
 
 epo = mne.read_epochs("{}grand_central_finfo_SI-epo.fif".format(proc_dir))
+
+exclude = ["002", "003", "028"]
+for excl in exclude:
+    epo = epo["Subj!='{}'".format(excl)]
+
 df = epo.metadata
 
 subjs = list(df["Subj"].unique())
@@ -35,7 +41,6 @@ conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
 osc_types = ["SO", "deltO"]
 syncs = ["sync", "async", "all"]
-syncs = ["all"]
 method = "wavelet"
 pf = [12, 15]
 SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "Cond":[], "StimType":[],
@@ -63,35 +68,26 @@ for subj in subjs:
                     SI_df_dict["SM_mean"].append(SM_mean)
 SI_df = pd.DataFrame.from_dict(SI_df_dict)
 
-for sync in syncs:
-    if sync != "all":
-        sync_df = df.query("Sync=='{}'".format(sync))
-        sync_SI_df = SI_df.query("Sync=='{}'".format(sync))
-        sync_string = ", {} only".format(sync)
-    else:
-        sync_df = df.copy()
-        sync_SI_df = SI_df.copy()
-        sync_string = ""
-    for osc in osc_types:
-        fig, axes = plt.subplots(len(conds),len(durs),figsize=(38.4,21.6),
-                                 subplot_kw={"projection":"polar"})
-        for dur_idx, dur in enumerate(durs):
-            for cond_idx, cond in enumerate(conds):
-                query_str = "OscType=='{}' and StimType=='{}' and Dur=='{}'".format(osc, cond, dur)
-                this_df = sync_df.query(query_str)
-                this_SI_df = sync_SI_df.query(query_str)
-                subj_spinds = this_SI_df["SM_mean"].values
-                subj_mean, subj_r_norm = r_vector(subj_spinds)
-                mean, r_norm = r_vector(this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values)
-                vecs = [[(subj_mean, subj_r_norm), {"color":"red","linewidth":4}],
-                        [(mean, r_norm), {"color":"blue","linewidth":4}]]
-                circ_hist_norm(axes[dur_idx,cond_idx], this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values,
-                               points=subj_spinds, vecs=vecs, alpha=0.3,
-                               points_col="red", bins=48)
-                axes[dur_idx,cond_idx].set_title("{} {}".format(cond, dur))
-        plt.suptitle("Spindle Peak on {} phase {} ({} transform)".format(osc, sync_string, method))
-        plt.tight_layout()
-        plt.savefig("../images/polar_hist_{}_{}_{}".format(osc, sync, method))
+for osc in osc_types:
+    fig, axes = plt.subplots(len(conds),len(durs),figsize=(38.4,21.6),
+                             subplot_kw={"projection":"polar"})
+    for dur_idx, dur in enumerate(durs):
+        for cond_idx, cond in enumerate(conds):
+            query_str = "OscType=='{}' and StimType=='{}' and Dur=='{}'".format(osc, cond, dur)
+            this_df = df.query(query_str)
+            this_SI_df = SI_df.query(query_str)
+            subj_spinds = this_SI_df["SM_mean"].values
+            subj_mean, subj_r_norm = r_vector(subj_spinds)
+            mean, r_norm = r_vector(this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values)
+            vecs = [[(subj_mean, subj_r_norm), {"color":"red","linewidth":4}],
+                    [(mean, r_norm), {"color":"blue","linewidth":4}]]
+            circ_hist_norm(axes[dur_idx,cond_idx], this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values,
+                           points=subj_spinds, vecs=vecs, alpha=0.3,
+                           points_col="red", bins=48)
+            axes[dur_idx,cond_idx].set_title("{} {}".format(cond, dur))
+    plt.suptitle("Spindle Peak on {} phase ({} transform)".format(osc, method))
+    plt.tight_layout()
+    plt.savefig("../images/polar_hist_{}_{}".format(osc, method))
 
 d = SI_df.query("OscType=='SO'")
 fig, ax = plt.subplots(figsize=(38.4,21.6))
@@ -120,10 +116,24 @@ print(mf.summary())
 
 # for figure 1
 pfs = [[12, 15], [15, 18]]
-fig, axes = plt.subplots(2,3, subplot_kw={"projection":"polar"},
-                         figsize=(38.4, 21.6))
+# fig, axes = plt.subplots(2,3, subplot_kw={"projection":"polar"},
+#                          figsize=(38.4, 21.6))
+mos_text = '''
+           PPP
+           012
+           012
+           012
+           012
+           WWW
+           345
+           345
+           345
+           345
+           '''
+fig, axes = plt.subplot_mosaic(mos_text, subplot_kw={"projection":"polar"},
+                               figsize=(38.4, 21.6))
 for pf_idx, pf in enumerate(pfs):
-    SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "Cond":[], "StimType":[],
+    SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "StimType":[],
                   "SM_norm":[], "SM_mean":[]}
     for subj in subjs:
         for osc in osc_types:
@@ -138,27 +148,45 @@ for pf_idx, pf in enumerate(pfs):
                     SI_df_dict["Subj"].append(subj)
                     SI_df_dict["Sync"].append(this_df["Sync"].iloc[0])
                     SI_df_dict["OscType"].append(osc)
-                    SI_df_dict["Cond"].append(cond+dur)
                     SI_df_dict["StimType"].append(cond)
                     SI_df_dict["SM_norm"].append(SM_r_norm)
                     SI_df_dict["SM_mean"].append(SM_mean)
 
     SI_df = pd.DataFrame.from_dict(SI_df_dict)
 
+    colors = ["blue", "red", "green"]
+    cond_subj_spinds = {}
     for cond_idx, cond in enumerate(conds):
-        this_ax = axes[pf_idx, cond_idx]
+        #this_ax = axes[pf_idx, cond_idx]
+        this_ax = axes[str(cond_idx + pf_idx*3)]
         query_str = "OscType=='SO' and StimType=='{}'".format(cond)
         this_df = df.query(query_str)
         this_SI_df = SI_df.query(query_str)
-        subj_spinds = this_SI_df["SM_mean"].values
-        subj_mean, subj_r_norm = r_vector(subj_spinds)
+        cond_subj_spinds[cond] = this_SI_df["SM_mean"].values
+        subj_mean, subj_r_norm = r_vector(cond_subj_spinds[cond])
         mean, r_norm = r_vector(this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values)
-        vecs = [[(subj_mean, subj_r_norm), {"color":"red","linewidth":4}],
-                [(mean, r_norm), {"color":"blue","linewidth":4}]]
+        vecs = [[(subj_mean, subj_r_norm), {"color":"gray","linewidth":4}],
+                [(mean, r_norm), {"color":colors[cond_idx],"linewidth":4}]]
         circ_hist_norm(this_ax, this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values,
-                       points=subj_spinds, vecs=vecs, alpha=0.3,
-                       points_col="red", bins=48)
-        this_ax.set_title("{}".format(cond))
-    plt.suptitle("Spindle Peak on SO phase {} ({} transform)".format(sync_string, method))
-    plt.tight_layout()
-    #plt.savefig("../images/polar_hist_{}_{}_{}".format(osc, sync, method))
+                       points=cond_subj_spinds[cond], vecs=vecs, alpha=0.3,
+                       color=colors[cond_idx], points_col="gray", bins=48)
+
+    print("{}-{}Hz".format(pf[0], pf[1]))
+    p_wat, df_wat = watson_williams(*cond_subj_spinds.values())
+    print("Watson-Williams: F={}, p={}".format(df_wat["F"].values[0], p_wat))
+    p, V = kuiper(cond_subj_spinds["sham"], cond_subj_spinds["eig"])
+    print("sham versus eigen: p={}, V={}".format(p,V))
+    p, V = kuiper(cond_subj_spinds["sham"], cond_subj_spinds["fix"])
+    print("sham versus fix: p={}, V={}".format(p,V))
+    p, V = kuiper(cond_subj_spinds["eig"], cond_subj_spinds["fix"])
+    print("fix versus eigen: p={}, V={}".format(p,V))
+
+
+plt.suptitle("Spindle Peak on SO phase")
+axes["P"].axis("off")
+axes["W"].axis("off")
+axes["0"].set_title("Sham")
+axes["1"].set_title("Eigen frequency")
+axes["2"].set_title("Fixed frequency")
+plt.tight_layout()
+plt.savefig("../images/polar_hist_fig1_{}_{}".format(osc, method))
