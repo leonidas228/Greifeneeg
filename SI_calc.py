@@ -118,7 +118,7 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
         this_epo.metadata["SI"] = SI_ang
         this_epo.metadata["Spind_Max_{}-{}Hz".format(power_freq[0],
                                                      power_freq[1])] = spind_max
-        epos.append(this_epo)
+    epos.append(this_epo)
 
 epo = mne.concatenate_epochs(epos)
 epo.save("{}grand_{}_finfo_SI-epo.fif".format(proc_dir, chan), overwrite=True)

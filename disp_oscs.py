@@ -15,7 +15,7 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-epo = mne.read_epochs("{}grand_central-epo.fif".format(proc_dir))
+epo = mne.read_epochs("{}grand_central_finfo-epo.fif".format(proc_dir))
 for excl in exclude:
     epo = epo["Subj!='{}'".format(excl)]
 

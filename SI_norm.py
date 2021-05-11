@@ -8,6 +8,7 @@ import seaborn as sns
 from circular_hist import circ_hist_norm
 import matplotlib.pyplot as plt
 from pycircstat.tests import watson_williams, vtest, kuiper
+from astropy.stats import kuiper_two
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
@@ -30,6 +31,7 @@ proc_dir = root_dir+"proc/"
 epo = mne.read_epochs("{}grand_central_finfo_SI-epo.fif".format(proc_dir))
 
 exclude = ["002", "003", "028"]
+#exclude = []
 for excl in exclude:
     epo = epo["Subj!='{}'".format(excl)]
 
@@ -39,7 +41,7 @@ subjs = list(df["Subj"].unique())
 subjs.sort()
 conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
-osc_types = ["SO", "deltO"]
+osc_types = ["SO"]
 syncs = ["sync", "async", "all"]
 method = "wavelet"
 pf = [12, 15]
@@ -101,7 +103,7 @@ mod = smf.mixedlm(formula, data=d, groups=d["Sync"])
 mf = mod.fit()
 print(mf.summary())
 
-d = SI_df.query("OscType=='deltO'")
+d = SI_df.query("OscType=='SO'")
 fig, ax = plt.subplots(figsize=(38.4,21.6))
 sns.barplot(data=d, x="StimType", hue="Dur", y="SM_norm", ax=ax)
 plt.ylabel("Resultant Vector")
@@ -133,6 +135,7 @@ mos_text = '''
 fig, axes = plt.subplot_mosaic(mos_text, subplot_kw={"projection":"polar"},
                                figsize=(38.4, 21.6))
 for pf_idx, pf in enumerate(pfs):
+    print("{}-{}Hz".format(pf[0], pf[1]))
     SI_df_dict = {"Subj":[], "Sync":[], "OscType":[], "StimType":[],
                   "SM_norm":[], "SM_mean":[]}
     for subj in subjs:
@@ -156,6 +159,7 @@ for pf_idx, pf in enumerate(pfs):
 
     colors = ["blue", "red", "green"]
     cond_subj_spinds = {}
+    cond_spinds = {}
     for cond_idx, cond in enumerate(conds):
         #this_ax = axes[pf_idx, cond_idx]
         this_ax = axes[str(cond_idx + pf_idx*3)]
@@ -163,30 +167,39 @@ for pf_idx, pf in enumerate(pfs):
         this_df = df.query(query_str)
         this_SI_df = SI_df.query(query_str)
         cond_subj_spinds[cond] = this_SI_df["SM_mean"].values
+        cond_spinds[cond] = this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values
         subj_mean, subj_r_norm = r_vector(cond_subj_spinds[cond])
         mean, r_norm = r_vector(this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values)
+        print("{} - subj_mean: {}/{} subj_r_norm: {}".format(cond, subj_mean, 360+np.rad2deg(subj_mean), subj_r_norm))
+        print("{} - mean: {}/{} r_norm: {}".format(cond, mean, 360+np.rad2deg(mean), r_norm))
         vecs = [[(subj_mean, subj_r_norm), {"color":"gray","linewidth":4}],
                 [(mean, r_norm), {"color":colors[cond_idx],"linewidth":4}]]
         circ_hist_norm(this_ax, this_df["Spind_Max_{}-{}Hz".format(pf[0], pf[1])].values,
                        points=cond_subj_spinds[cond], vecs=vecs, alpha=0.3,
                        color=colors[cond_idx], points_col="gray", bins=48)
 
-    print("{}-{}Hz".format(pf[0], pf[1]))
     p_wat, df_wat = watson_williams(*cond_subj_spinds.values())
     print("Watson-Williams: F={}, p={}".format(df_wat["F"].values[0], p_wat))
-    p, V = kuiper(cond_subj_spinds["sham"], cond_subj_spinds["eig"])
-    print("sham versus eigen: p={}, V={}".format(p,V))
-    p, V = kuiper(cond_subj_spinds["sham"], cond_subj_spinds["fix"])
-    print("sham versus fix: p={}, V={}".format(p,V))
-    p, V = kuiper(cond_subj_spinds["eig"], cond_subj_spinds["fix"])
-    print("fix versus eigen: p={}, V={}".format(p,V))
+    D, p = kuiper_two(cond_subj_spinds["sham"], cond_subj_spinds["eig"])
+    print("Subj sham versus eigen: p={}, D={}".format(p,D))
+    D, p = kuiper_two(cond_subj_spinds["sham"], cond_subj_spinds["fix"])
+    print("Subj sham versus fix: p={}, D={}".format(p,D))
+    D, p = kuiper_two(cond_subj_spinds["eig"], cond_subj_spinds["fix"])
+    print("Subj fix versus eigen: p={}, D={}".format(p,D))
+
+    D, p = kuiper_two(cond_spinds["sham"], cond_spinds["eig"])
+    print("sham versus eigen: p={}, D={}".format(p,D))
+    D, p = kuiper_two(cond_spinds["sham"], cond_spinds["fix"])
+    print("sham versus fix: p={}, D={}".format(p,D))
+    D, p = kuiper_two(cond_spinds["eig"], cond_spinds["fix"])
+    print("fix versus eigen: p={}, D={}".format(p,D))
 
 
-plt.suptitle("Spindle Peak on SO phase")
+plt.suptitle("Spindle Peak on SO phase", fontsize=36)
 axes["P"].axis("off")
 axes["W"].axis("off")
 axes["0"].set_title("Sham")
 axes["1"].set_title("Eigen frequency")
 axes["2"].set_title("Fixed frequency")
 plt.tight_layout()
-plt.savefig("../images/polar_hist_fig1_{}_{}".format(osc, method))
+plt.savefig("../images/polar_hist_fig1_SO_{}".format(method))

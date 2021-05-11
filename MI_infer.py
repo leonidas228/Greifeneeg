@@ -68,12 +68,13 @@ for osc in ["SO"]:
 
         predict_df = pd.DataFrame.from_dict(predict_df_dict)
 
-        fig, ax = plt.subplots(figsize=(38.4, 21.6))
+        fig, ax = plt.subplots(figsize=(19.2, 19.2))
         sns.barplot(data=predict_df, y="PAC", x="Stimulation", hue="Duration",
                     order=["Sham", "Eigen", "Fixed"], hue_order=["30s", "2m", "5m"],
                     ax=ax)
-        plt.ylim((0.05, 0.28))
-        plt.ylabel("normalised direct PAC", fontsize=28)
+        plt.legend(loc="upper left")
+        plt.ylim((0.15, 0.25))
+        plt.ylabel("normalised direct PAC", fontsize=36)
         plt.suptitle("{} PAC LME model predictions, {}-{}Hz, {}-{}ms".format(osc, freq_win[0],
                                                                freq_win[1],
                                                                time_win[0],

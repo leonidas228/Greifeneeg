@@ -89,13 +89,13 @@ cond_exogs_syncfact =   {"Sham 30s synchronised":["Intercept (sham30s synchronis
 
 durs = ["30s", "2m", "5m"]
 conds = ["sham","fix","eig"]
-osc = "deltO"
+osc = "SO"
 baseline = "zscore"
 sync_fact = "rsyncfact"
 use_group = "group"
 prepost = False
 balance_conds = False
-badsubjs = "no2,3,28"
+badsubjs = "no2,3,28,14,51"
 if baseline == "zscore" or baseline=="zboot":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
@@ -104,7 +104,7 @@ elif baseline == "mean":
     vmin, vmax = -5, 100
 else:
     vmin, vmax = None, None
-fdr_cor = True
+fdr_cor = False
 
 if prepost:
     new_cond_keys = {k+":C(PrePost, Treatment('Pre'))[T.Post]":v+" Post-stimulation"

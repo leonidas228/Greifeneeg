@@ -349,7 +349,8 @@ axes["fix"].set_title("Fixed frequency")
 axes["fix-sham"].set_title("Fixed - Sham")
 axes["eig-sham"].set_title("Eigen - Sham")
 
-axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc))
+axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc),
+                         fontsize=36)
 fig.suptitle("")
 fig.tight_layout()
 fig.savefig("../images/lmmtfr_fig1_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))

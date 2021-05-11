@@ -32,5 +32,5 @@ with open("hyperparameter_CV.txt", "wt") as f:
     f.write(classification_report(y_test, y_pred))
 best_model = clf.best_estimator_
 best_model.fit(freqs, ys)
-with open("sleep_stage_classifier.pickle", "wb") as f:
+with open("sleep_stage_classifier.pickle", ----"wb") as f:
     pickle.dump(best_model, f)

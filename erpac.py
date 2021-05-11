@@ -193,7 +193,7 @@ for osc in osc_types:
         tfr = tfr_morlet(e, f_amp[:-1], n_cycles=5, average=False, return_itc=False)
         tfr = tfr.average()
 
-        fig, ax = plt.subplots(figsize=(38.4,21.6))
+        fig, ax = plt.subplots(figsize=(24,19.2))
         # ep.pacplot(erpac.squeeze(), times, ep.yvec,
         #            pvalues=ep.pvalues.squeeze(), p=p)
         # ep.pacplot(erpac_mask.squeeze(), times, ep.yvec)
@@ -205,16 +205,18 @@ for osc in osc_types:
         #                                                                 pf[0],
         #                                                                 pf[1],
         #                                                                 method))
-        plt.ylabel("Hz", fontdict={"size":36})
+        plt.ylabel("Frequency (Hz)", fontdict={"size":36})
         plt.xlabel("Time (s)", fontdict={"size":36})
 
         cut_inds = epo.time_as_index((osc_cut[0], osc_cut[1]))
         evo = cond_epo.average().data[0,cut_inds[0]:cut_inds[1]]
         evo = (evo - evo.min())/(evo.max()-evo.min())
-        evo = evo*5 + 13
+        evo = evo*7 + 11
 
         plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
-        plt.suptitle("ERPAC for {}, normalised difference: {} frequency - sham".format(osc, cond))
+        if cond == "fix":
+            cond_txt = "Fixed"
+        plt.suptitle("ERPAC for {}, normalised difference: {} - Sham".format(osc, cond_txt))
         plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
         plt.savefig("../images/ERPAC_{}_{}_{}.svg".format(osc, cond, method))
 
