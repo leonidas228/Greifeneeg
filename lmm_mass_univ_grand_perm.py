@@ -54,7 +54,8 @@ use_group = opt.group
 bad_subjs = opt.badsubjs
 bad_subjs_dict = {"all_subj":[], "no2,3":["002", "003"],
                   "no,2,3,28,45,48":["002", "003", "028", "045", "048"],
-                  "no2,3,28":["002", "003", "028"]}
+                  "no2,3,28":["002", "003", "028"],
+                  "no2,3,28,14,51":["002", "003", "028", "014", "051"]}
 perm_n = opt.perm
 
 tfr = read_tfrs("{}grand_central_{}-tfr.h5".format(proc_dir, baseline))[0]
