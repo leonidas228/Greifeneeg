@@ -9,7 +9,7 @@ from scipy.interpolate import interp2d
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
-        'size'   : 20}
+        'size'   : 40}
 matplotlib.rc('font', **font)
 
 def tfce_correct(data, tfce_thresh):
@@ -82,7 +82,7 @@ osc = "SO"
 baseline = "zscore"
 sync_fact = "rsyncfact"
 use_group = "group"
-badsubjs = "no2,3,28"
+badsubjs = "no2,3,28,14,51"
 if baseline == "zscore":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
@@ -325,21 +325,21 @@ for k,v in coe_keys.items():
     norm = matplotlib.colors.Normalize(vmin=pred_vmin, vmax=pred_vmax)
     sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=pred_cmap)
     plt.colorbar(sm, cax=axes["cbar"])
-    axes["cbar"].set_ylabel("Z-score from baseline", fontsize=28)
+    axes["cbar"].set_ylabel("Z-score from baseline")
 
-axes["sham"].set_ylabel("Frequency (Hz)", fontsize=30)
-axes["sham"].set_xlabel("Time (s)", fontsize=30)
+axes["sham"].set_ylabel("Frequency (Hz)")
+axes["sham"].set_xlabel("Time (s)")
 axes["fix-sham"].set_yticks([])
 axes["eig-sham"].set_yticks([])
 axes["fix"].set_xticks([])
 axes["fix"].set_xlabel("")
-axes["fix"].set_ylabel("Frequency (Hz)", fontsize=30)
+axes["fix"].set_ylabel("Frequency (Hz)")
 axes["fix-sham"].set_xticks([])
 axes["fix-sham"].set_xlabel("")
 axes["fix-sham"].set_ylabel("")
-axes["eig"].set_xlabel("Time (s)", fontsize=30)
-axes["eig"].set_ylabel("Frequency (Hz)", fontsize=30)
-axes["eig-sham"].set_xlabel("Time (s)", fontsize=30)
+axes["eig"].set_xlabel("Time (s)")
+axes["eig"].set_ylabel("Frequency (Hz)")
+axes["eig-sham"].set_xlabel("Time (s)")
 axes["eig-sham"].set_ylabel("")
 axes["blank1"].axis("off")
 axes["blank2"].axis("off")
@@ -349,8 +349,7 @@ axes["fix"].set_title("Fixed frequency")
 axes["fix-sham"].set_title("Fixed - Sham")
 axes["eig-sham"].set_title("Eigen - Sham")
 
-axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc),
-                         fontsize=36)
+axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc), fontsize=32)
 fig.suptitle("")
 fig.tight_layout()
 fig.savefig("../images/lmmtfr_fig1_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))

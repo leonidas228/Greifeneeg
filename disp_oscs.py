@@ -7,7 +7,7 @@ font = {'weight' : 'bold',
         'size'   : 28}
 matplotlib.rc('font', **font)
 
-exclude = ["002", "003", "028"]
+exclude = ["002", "003", "028", "014", "051"]
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
@@ -33,8 +33,8 @@ ax.set_ylim((-200, 200))
 ax.plot(epo.times, e_SO_dat.T, color="blue", alpha=0.005)
 ax.plot(epo.times, e_SO_dat.mean(axis=0), color="black")
 ax.set_title("Slow Oscillations, N={}".format(len(e_SO)))
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("\u03BC"+"v")
+ax.set_xlabel("Time (s)", fontsize=36)
+ax.set_ylabel("\u03BC"+"v", fontsize=36)
 
 ax = plt.subplot(1,2,2)
 ax.set_ylim((-200, 200))
@@ -42,7 +42,7 @@ ax.plot(epo.times, e_DO_dat.T, color="red", alpha=0.005)
 ax.plot(epo.times, e_DO_dat.mean(axis=0), color="black")
 ax.set_title("Delta Oscillations, N={}".format(len(e_DO)))
 ax.set_yticks([])
-ax.set_xlabel("Time (s)")
+ax.set_xlabel("Time (s)", fontsize=36)
 
 plt.suptitle("Detected Slow Wave Sleep Oscillations")
 

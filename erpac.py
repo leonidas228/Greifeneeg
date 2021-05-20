@@ -14,7 +14,7 @@ import pickle
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
-        'size'   : 28}
+        'size'   : 40}
 matplotlib.rc('font', **font)
 
 def do_erpac(ep, epo, cut, baseline=None, fit_args={"mcp":"fdr", "p":0.05,
@@ -132,13 +132,13 @@ osc_types = ["SO"]
 sfreq = 200.
 phase_freqs = {"SO":(0.5, 1.25),"deltO":(1.25, 4)}
 power_freqs = (5, 25)
-conds = ["fix"]
+conds = ["eig", "fix"]
 durs = ["30s", "2m", "5m"]
 osc_cuts = {"SO":(-1.5,1.5),"deltO":(-.75,.75)}
 baseline = (-2.35, -1.5)
 #baseline = None
 method = "wavelet"
-exclude = ["002", "003", "028"]
+exclude = ["002", "003", "028", "014", "051"]
 p = 0.05
 n_perm = 1000
 tfce_thresh = dict(start=0, step=0.2)
@@ -216,6 +216,8 @@ for osc in osc_types:
         plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
         if cond == "fix":
             cond_txt = "Fixed"
+        elif cond=="eig":
+            cond_txt = "Eigen"
         plt.suptitle("ERPAC for {}, normalised difference: {} - Sham".format(osc, cond_txt))
         plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
         plt.savefig("../images/ERPAC_{}_{}_{}.svg".format(osc, cond, method))

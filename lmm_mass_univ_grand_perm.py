@@ -74,6 +74,8 @@ if baseline == "mean":
 df = tfr.metadata.copy()
 df["Brain"] = np.zeros(len(df),dtype=np.float64)
 
+breakpoint()
+
 groups = df["Subj"] if use_group == "group" else pd.Series(np.zeros(len(df),dtype=int))
 re_form = None
 vc_form = None

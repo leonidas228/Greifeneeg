@@ -3,6 +3,7 @@ import mne
 from mne.datasets.sleep_physionet.age import fetch_data
 from mne.time_frequency import psd_welch
 from os.path import isdir
+import pickle
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
@@ -10,6 +11,16 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import FunctionTransformer
+
+def append_dicts(dict_a, dict_b):
+    for k,v in dict_a["freqs"].items():
+        for kk,vv in v.items():
+            dict_a["freqs"][k][kk] = np.concatenate((dict_a["freqs"][k][kk],
+                                                     dict_b["freqs"][k][kk]))
+    for k,v in dict_a["amps"].items():
+        dict_a["amps"][k] = np.concatenate((dict_a["amps"][k],
+                                            dict_b["amps"][k]))
+    return dict_a
 
 def power_band(epochs):
     """EEG relative power band feature extraction.
@@ -35,21 +46,29 @@ def power_band(epochs):
                   "sigma": [11.5, 15.5],
                   "beta": [15.5, 30]}
 
-    psds, freqs = psd_welch(epochs, picks='eeg', fmin=0.5, fmax=30.)
+    eeg_picks = mne.pick_types(epo.info, eeg=True)
+    eeg_ch_names = [epo.ch_names[idx] for idx in np.nditer(eeg_picks)]
+    psds, freqs = psd_welch(epochs, picks=eeg_picks, fmin=0.5, fmax=30.)
     # Normalize the PSDs
     psds /= np.sum(psds, axis=-1, keepdims=True)
 
-    X = []
-    for fmin, fmax in FREQ_BANDS.values():
-        psds_band = psds[:, :, (freqs >= fmin) & (freqs < fmax)].mean(axis=-1)
-        X.append(psds_band.reshape(len(psds), -1))
-
-    return np.concatenate(X, axis=1)
+    X = {ch_name:{band_name:[] for band_name in FREQ_BANDS.keys()}
+         for ch_name in eeg_ch_names}
+    for band_name, (fmin, fmax) in FREQ_BANDS.items():
+        freq_inds = (freqs >= fmin) & (freqs < fmax)
+        for ch_idx, ch_name in zip(eeg_picks, eeg_ch_names):
+            psds_band = psds[:, ch_idx, freq_inds].mean(axis=-1)
+            X[ch_name][band_name] = psds_band.reshape(len(psds), -1)
+    return X
 
 def epo_amps(epo):
-    picks = mne.pick_channels(epo.ch_names, ["EOG horizontal", "EMG submental"])
-    data = epo.load_data().get_data()[:,picks,]
-    return np.sqrt(np.sum(data**2, axis=-1))
+    chans = ["EOG horizontal", "EMG submental"]
+    picks = mne.pick_channels(epo.ch_names, chans)
+    X = {}
+    data = epo.load_data().get_data()
+    for ch, pick in zip(chans, np.nditer(picks)):
+        X[ch] = np.sqrt(np.sum(data[:,pick,]**2, axis=-1))
+    return X
 
 subjects = list(np.arange(83))
 subjects = [subj for subj in subjects if subj not in [36,39,52,68,69,78,79]]
@@ -73,9 +92,8 @@ if isdir("/home/jev"):
 elif isdir("/home/jeff"):
     proc_dir = "/home/jeff/hdd/jeff/sfb/"
 
-mats = []
 ys = []
-for files in all_files:
+for file_idx, files in enumerate(all_files):
     mapping = {'EOG horizontal': 'eog',
                'Resp oro-nasal': 'misc',
                'EMG submental': 'misc',
@@ -98,10 +116,15 @@ for files in all_files:
         continue
     freqs = power_band(epo)
     amps = epo_amps(epo)
-    mats.append(np.hstack((freqs,amps)))
+    this_mat = {"freqs":freqs, "amps":amps}
+
+    if file_idx:
+        mats = append_dicts(mats, this_mat)
+    else:
+        mats = this_mat
     ys.append(events[:,2])
 
-mats = np.vstack(mats)
 ys = np.hstack(ys)
-np.save("{}freq_mat.npy".format(proc_dir), mats)
+with open("{}freq_mat.pickle".format(proc_dir), "wb") as f:
+    pickle.dump(mats, f)
 np.save("{}ys.npy".format(proc_dir), ys)
