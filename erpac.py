@@ -133,16 +133,17 @@ sfreq = 200.
 phase_freqs = {"SO":(0.5, 1.25),"deltO":(1.25, 4)}
 power_freqs = (5, 25)
 conds = ["eig", "fix"]
+conds = ["fix"]
 durs = ["30s", "2m", "5m"]
 osc_cuts = {"SO":(-1.5,1.5),"deltO":(-.75,.75)}
 baseline = (-2.35, -1.5)
 #baseline = None
 method = "wavelet"
-exclude = ["002", "003", "028", "014", "051"]
+exclude = ["002", "003", "028", "007", "051"]
 p = 0.05
 n_perm = 1000
 tfce_thresh = dict(start=0, step=0.2)
-recalc = False
+recalc = True
 
 f_amp = np.linspace(power_freqs[0],power_freqs[1],50)
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),

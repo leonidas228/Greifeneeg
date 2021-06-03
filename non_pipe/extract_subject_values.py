@@ -46,8 +46,8 @@ for bs in bad_subjs:
     df_pac = df_pac.query("Subj!='{}'".format(bs))
 for bd in bad_durs:
     print("Removing duration {}".format(bd))
-    tfr = tfr["Dur!='{}'".format(bs)]
-    df_pac = df_pac.query("Dur!='{}'".format(bs))
+    tfr = tfr["Dur!='{}'".format(bd)]
+    df_pac = df_pac.query("Dur!='{}'".format(bd))
 
 tfr_subjs = list(tfr.metadata["Subj"].unique())
 pac_subjs = list(df_pac["Subj"].unique())

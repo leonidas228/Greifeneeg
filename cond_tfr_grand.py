@@ -95,7 +95,7 @@ sync_fact = "rsyncfact"
 use_group = "group"
 prepost = False
 balance_conds = False
-badsubjs = "no2,3,28,14,51"
+badsubjs = "no2,3,28,7,51"
 if baseline == "zscore" or baseline=="zboot":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
@@ -104,7 +104,7 @@ elif baseline == "mean":
     vmin, vmax = -5, 100
 else:
     vmin, vmax = None, None
-fdr_cor = False
+fdr_cor = True
 
 if prepost:
     new_cond_keys = {k+":C(PrePost, Treatment('Pre'))[T.Post]":v+" Post-stimulation"

@@ -47,7 +47,7 @@ use_groups = ["group", "nogroup"]
 use_groups = ["group"]
 use_badsubjs = {"all_subj":[]}
 use_badsubjs = {"no2,3,28":["002", "003", "028"]}
-use_badsubjs = {"no2,3,28,14,51":["002", "003", "028", "014", "051"]}
+use_badsubjs = {"no2,3,28,7,51":["002", "003", "028", "007", "051"]}
 
 for bs_name, bad_subjs in use_badsubjs.items():
     for use_group in use_groups:
