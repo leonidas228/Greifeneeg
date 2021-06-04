@@ -98,7 +98,8 @@ md = smf.mixedlm(formula, df, re_formula=re_form,
 print(exog_names)
 t_vals = np.zeros((perm_n, len(exog_names), np.product(tfr_shape)))
 data_inds = np.arange(len(data))
-for perm_idx in range(perm_n):
+perm_idx = 0
+while 0 in t_vals:
     if use_group:
         # if we have group as a factor, we shuffle data only within subjects
         for subj in subjs:
@@ -109,9 +110,12 @@ for perm_idx in range(perm_n):
         np.random.shuffle(data_inds)
     data = data[data_inds,]
     fits = mass_uv_lmm(data, endog, exog, groups, exog_re, exog_vc)
-    for mf_idx, mf in enumerate(fits):
-        for exog_idx, en in enumerate(exog_names):
-            t_vals[perm_idx, exog_idx, mf_idx] = mf.tvalues[exog_names.index(en)]
+    if None not in fits:
+        for mf_idx, mf in enumerate(fits):
+            for exog_idx, en in enumerate(exog_names):
+                t_vals[perm_idx, exog_idx, mf_idx] = \
+                  mf.tvalues[exog_names.index(en)]
+        perm_idx += 1
     del fits
 
 t_vals = np.reshape(t_vals, (perm_n, len(exog_names), *tfr_shape), order="F")
