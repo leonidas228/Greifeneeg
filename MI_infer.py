@@ -39,10 +39,10 @@ elif isdir("/home/jeff"):
     root_dir = "/home/jeff/hdd/jeff/sfb/"
 proc_dir = root_dir+"proc/"
 
-method="wavelet"
+method= "wavelet"
 baseline = "nobl"
-#baseline = "zscore"
-time_win = (250,650)
+baseline = "zscore"
+time_win = (275,600)
 #time_win = (50,600)
 freq_win = (12, 15)
 bootstrap = "load"
@@ -54,7 +54,7 @@ print(infile)
 df = pd.read_pickle(infile)
 
 for osc in ["SO"]:
-    for var in ["ND"]:
+    for var in ["ND", "MVL", "PLV"]:
         fig, ax = plt.subplots(figsize=(38.4, 21.6))
         this_df = df.query("OscType=='{}'".format(osc))
 
@@ -73,69 +73,69 @@ for osc in ["SO"]:
         mf = mod.fit(reml=False)
         print(mf.summary())
 
-        # model predictions
-        predict_df_dict = {"Stimulation":[],"Duration":[],"PAC":[]}
-        exog_names = mf.model.exog_names
-        for st in ["sham", "eig", "fix"]:
-            for dur in ["30s", "2m", "5m"]:
-                pac = mf.predict(exog={"StimType":[st], "Dur":[dur]}).values[0]
-
-                predict_df_dict["PAC"].append(pac)
-                if st == "sham":
-                    predict_df_dict["Stimulation"].append("Sham")
-                elif st == 'eig':
-                    predict_df_dict["Stimulation"].append("Eigen")
-                elif st == 'fix':
-                    predict_df_dict["Stimulation"].append("Fixed")
-                predict_df_dict["Duration"].append(dur)
-        predict_df = pd.DataFrame.from_dict(predict_df_dict)
-
-        if bootstrap == "load":
-            filename = "{}{}_{}_{}_{}-{}_{}-{}_predict_bs.pickle".format(proc_dir,
-                                                                         var, osc,
-                                                                         method,
-                                                                         *freq_win,
-                                                                         *time_win)
-            predict_bs = pd.read_pickle(filename)
-        elif type(bootstrap) == int:
-            predict_bs_dict = {"Stimulation":[],"Duration":[],"PAC":[]}
-            subjs = list(np.unique(this_df["Subj"].values))
-            for bs_idx in range(bootstrap):
-                print("Bootstrap iteration {} of {}".format(bs_idx, bootstrap))
-                this_df_bs = this_df.copy()
-                for subj in subjs:
-                    subj_inds = this_df_bs["Subj"]==subj
-                    vals = this_df_bs[subj_inds][var].values
-                    inds = np.random.randint(len(vals), size=len(vals))
-                    this_df_bs.loc[subj_inds,var] = vals[inds]
-
-                mod_bs = smf.mixedlm(formula, data=this_df_bs, groups=this_df_bs["Sync"], re_formula=re_form, vc_formula=vc_form)
-                mf_bs = mod_bs.fit(reml=False)
-                exog_names = mf_bs.model.exog_names
-                for st in ["sham", "eig", "fix"]:
-                    for dur in ["30s", "2m", "5m"]:
-                        pac = mf_bs.predict(exog={"StimType":[st],
-                                            "Dur":[dur]}).values[0]
-                        predict_bs_dict["PAC"].append(pac)
-                        if st == "sham":
-                            predict_bs_dict["Stimulation"].append("Sham")
-                        elif st == 'eig':
-                            predict_bs_dict["Stimulation"].append("Eigen")
-                        elif st == 'fix':
-                            predict_bs_dict["Stimulation"].append("Fixed")
-                        predict_bs_dict["Duration"].append(dur)
-            predict_bs = pd.DataFrame.from_dict(predict_bs_dict)
-            predict_bs.to_pickle("{}{}_{}_{}_{}-{}_{}-{}_predict_bs.pickle".format(proc_dir, var, osc, method, *freq_win, *time_win))
-
-        fig, ax = plot_werr(predict_df, predict_bs, ["Sham", "Eigen", "Fixed"],
-                            ["30s", "2m", "5m"])
-        plt.ylim((0.15, 0.23))
-        ax.text(2, 0.22, "*", fontsize=75)
-        #plt.legend()
-        plt.ylabel("normalised direct PAC", fontsize=36)
-        plt.suptitle("{} PAC LME model predictions, {}-{}Hz, {}-{}ms".format(osc, freq_win[0],
-                                                               freq_win[1],
-                                                               time_win[0],
-                                                               time_win[1]))
-        plt.savefig("../images/{}_{}_{}_{}-{}_{}-{}_predict.png".format(var, osc, method, *freq_win, *time_win))
-        plt.savefig("../images/{}_{}_{}_{}-{}_{}-{}_predict.svg".format(var, osc, method, *freq_win, *time_win))
+        # # model predictions
+        # predict_df_dict = {"Stimulation":[],"Duration":[],"PAC":[]}
+        # exog_names = mf.model.exog_names
+        # for st in ["sham", "eig", "fix"]:
+        #     for dur in ["30s", "2m", "5m"]:
+        #         pac = mf.predict(exog={"StimType":[st], "Dur":[dur]}).values[0]
+        #
+        #         predict_df_dict["PAC"].append(pac)
+        #         if st == "sham":
+        #             predict_df_dict["Stimulation"].append("Sham")
+        #         elif st == 'eig':
+        #             predict_df_dict["Stimulation"].append("Eigen")
+        #         elif st == 'fix':
+        #             predict_df_dict["Stimulation"].append("Fixed")
+        #         predict_df_dict["Duration"].append(dur)
+        # predict_df = pd.DataFrame.from_dict(predict_df_dict)
+        #
+        # if bootstrap == "load":
+        #     filename = "{}{}_{}_{}_{}-{}_{}-{}_predict_bs.pickle".format(proc_dir,
+        #                                                                  var, osc,
+        #                                                                  method,
+        #                                                                  *freq_win,
+        #                                                                  *time_win)
+        #     predict_bs = pd.read_pickle(filename)
+        # elif type(bootstrap) == int:
+        #     predict_bs_dict = {"Stimulation":[],"Duration":[],"PAC":[]}
+        #     subjs = list(np.unique(this_df["Subj"].values))
+        #     for bs_idx in range(bootstrap):
+        #         print("Bootstrap iteration {} of {}".format(bs_idx, bootstrap))
+        #         this_df_bs = this_df.copy()
+        #         for subj in subjs:
+        #             subj_inds = this_df_bs["Subj"]==subj
+        #             vals = this_df_bs[subj_inds][var].values
+        #             inds = np.random.randint(len(vals), size=len(vals))
+        #             this_df_bs.loc[subj_inds,var] = vals[inds]
+        #
+        #         mod_bs = smf.mixedlm(formula, data=this_df_bs, groups=this_df_bs["Sync"], re_formula=re_form, vc_formula=vc_form)
+        #         mf_bs = mod_bs.fit(reml=False)
+        #         exog_names = mf_bs.model.exog_names
+        #         for st in ["sham", "eig", "fix"]:
+        #             for dur in ["30s", "2m", "5m"]:
+        #                 pac = mf_bs.predict(exog={"StimType":[st],
+        #                                     "Dur":[dur]}).values[0]
+        #                 predict_bs_dict["PAC"].append(pac)
+        #                 if st == "sham":
+        #                     predict_bs_dict["Stimulation"].append("Sham")
+        #                 elif st == 'eig':
+        #                     predict_bs_dict["Stimulation"].append("Eigen")
+        #                 elif st == 'fix':
+        #                     predict_bs_dict["Stimulation"].append("Fixed")
+        #                 predict_bs_dict["Duration"].append(dur)
+        #     predict_bs = pd.DataFrame.from_dict(predict_bs_dict)
+        #     predict_bs.to_pickle("{}{}_{}_{}_{}-{}_{}-{}_predict_bs.pickle".format(proc_dir, var, osc, method, *freq_win, *time_win))
+        #
+        # fig, ax = plot_werr(predict_df, predict_bs, ["Sham", "Eigen", "Fixed"],
+        #                     ["30s", "2m", "5m"])
+        # plt.ylim((0.15, 0.23))
+        # ax.text(2, 0.22, "*", fontsize=75)
+        # #plt.legend()
+        # plt.ylabel("normalised direct PAC", fontsize=44)
+        # plt.suptitle("{} PAC LME model predictions, {}-{}Hz, {}-{}ms".format(osc, freq_win[0],
+        #                                                        freq_win[1],
+        #                                                        time_win[0],
+        #                                                        time_win[1]))
+        # plt.savefig("../images/{}_{}_{}_{}-{}_{}-{}_predict.png".format(var, osc, method, *freq_win, *time_win))
+        # plt.savefig("../images/{}_{}_{}_{}-{}_{}-{}_predict.svg".format(var, osc, method, *freq_win, *time_win))

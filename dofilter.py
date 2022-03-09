@@ -12,6 +12,7 @@ proc_dir = root_dir+"proc/"
 filelist = listdir(proc_dir)
 proclist = listdir(proc_dir) # and in proc directory
 overwrite = False # skip
+do_subj = "043"
 
 l_freq = 0.1
 h_freq = 200
@@ -23,6 +24,8 @@ for filename in filelist:
         if "f_NAP_{}_T{}-raw.fif".format(subj,tag) in filelist and not overwrite:
             print("Already exists. Skipping.")
             continue
+        # if subj != do_subj:
+        #     continue
         raw = mne.io.Raw(proc_dir+filename, preload=True)
         raw.filter(l_freq=l_freq, h_freq=h_freq, n_jobs="cuda")
         raw.notch_filter(np.arange(50,h_freq,50), n_jobs="cuda")

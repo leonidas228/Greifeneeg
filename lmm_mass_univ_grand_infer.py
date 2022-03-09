@@ -9,7 +9,7 @@ from scipy.interpolate import interp2d
 plt.ion()
 import matplotlib
 font = {'weight' : 'bold',
-        'size'   : 40}
+        'size'   : 48}
 matplotlib.rc('font', **font)
 
 def tfce_correct(data, tfce_thresh):
@@ -82,7 +82,7 @@ osc = "SO"
 baseline = "zscore"
 sync_fact = "rsyncfact"
 use_group = "group"
-badsubjs = "no2,3,28,14,51"
+badsubjs = "no2,3,28,7,51"
 if baseline == "zscore":
     vmin, vmax = -2.5, 2.5
 elif baseline == "logmean":
@@ -142,6 +142,7 @@ with open("{}main_fits_{}_grand_{}_{}_{}_{}.pickle".format(proc_dir, baseline,
                                                            sync_fact), "rb") as f:
     fits = pickle.load(f)
 
+# parameters
 exog_names = fits["exog_names"]
 modfit = fits["fits"]
 cks = list(cond_keys.keys())
@@ -193,7 +194,6 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
                           linewidth=10)
         t_axes[en_idx].set_title(cond_keys[en])
 
-
         ## parameters corrected for multiple comparisons
         # positive and negative thresholds
         pos_thresh = np.quantile(minmax_ts[en]["max"], 1-perm_thresh)
@@ -226,16 +226,22 @@ for order_idx, param_idx in enumerate(range(0,len(cond_keys),9)):
 
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
-        plt.colorbar(sm, cax=tfce_axes["cbar"])
-        tfce_axes["cbar"].set_ylabel("Z-score from baseline", fontsize=28)
+        cbar = plt.colorbar(sm, cax=tfce_axes["cbar"])
+        tfce_axes["cbar"].set_ylabel("Z-score from baseline")
+        cbar.set_ticks([-2, -1, 0, 1, 2])
+        tfce_axes["cbar"].set_yticklabels([-2, -1, 0, 1, 2], fontweight="normal")
 
         if en_idx % 3 == 0:
-            tfce_axes[str(en_idx)].set_ylabel("Frequency (Hz)", fontsize=30)
+            tfce_axes[str(en_idx)].set_ylabel("Frequency (Hz)")
+            tfce_axes[str(en_idx)].set_yticks([10, 15, 20])
+            tfce_axes[str(en_idx)].set_yticklabels([10, 15, 20], fontweight="normal")
         else:
             tfce_axes[str(en_idx)].set_ylabel("")
             tfce_axes[str(en_idx)].set_yticks([])
         if en_idx >= 6:
             tfce_axes[str(en_idx)].set_xlabel("Time (s)", fontsize=30)
+            tfce_axes[str(en_idx)].set_xticks([-1, 0, 1])
+            tfce_axes[str(en_idx)].set_xticklabels([-1, 0, 1], fontweight="normal")
         else:
             tfce_axes[str(en_idx)].set_xlabel("")
             tfce_axes[str(en_idx)].set_xticks([])
@@ -274,20 +280,20 @@ for order_idx, param_idx in enumerate(range(0,len(cond_exogs.keys()),9)):
         norm = matplotlib.colors.Normalize(vmin=pred_vmin, vmax=pred_vmax)
         sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=pred_cmap)
         plt.colorbar(sm, cax=axes["cbar"])
-        axes["cbar"].set_ylabel("Z-score from baseline", fontsize=28)
+        axes["cbar"].set_ylabel("Z-score from baseline", fontsize=40)
 
         if cond_idx % 3 == 0:
-            axes[str(cond_idx)].set_ylabel("Frequency (Hz)", fontsize=30)
+            axes[str(cond_idx)].set_ylabel("Frequency (Hz)", fontsize=40)
         else:
             axes[str(cond_idx)].set_ylabel("")
             axes[str(cond_idx)].set_yticks([])
         if cond_idx >= 6:
-            axes[str(cond_idx)].set_xlabel("Time (s)", fontsize=30)
+            axes[str(cond_idx)].set_xlabel("Time (s)", fontsize=40)
         else:
             axes[str(cond_idx)].set_xlabel("")
             axes[str(cond_idx)].set_xticks([])
 
-    fig.suptitle("LME model predictions of {} spindle power".format(osc))
+    fig.suptitle("LME model predictions of {} spindle power".format(osc), fontsize=40)
     fig.tight_layout()
     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))
     fig.savefig("../images/lmmtfr_grand_predict_{}_{}_{}_{}_{}.svg".format(osc, badsubjs, use_group, sync_fact, order_idx))
@@ -324,21 +330,35 @@ for k,v in coe_keys.items():
 
     norm = matplotlib.colors.Normalize(vmin=pred_vmin, vmax=pred_vmax)
     sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=pred_cmap)
-    plt.colorbar(sm, cax=axes["cbar"])
+    cbar = plt.colorbar(sm, cax=axes["cbar"])
     axes["cbar"].set_ylabel("Z-score from baseline")
+    cbar.set_ticks([0, 1, 2, 3, 4])
+    axes["cbar"].set_yticklabels([0, 1, 2, 3, 4], fontweight="normal")
 
 axes["sham"].set_ylabel("Frequency (Hz)")
 axes["sham"].set_xlabel("Time (s)")
+axes["sham"].set_xticks([-1, 0, 1])
+axes["sham"].set_xticklabels([-1, 0, 1], fontweight="normal")
+axes["sham"].set_yticks([10, 12, 14, 16, 18, 20])
+axes["sham"].set_yticklabels([10, 12, 14, 16, 18, 20], fontweight="normal")
+axes["eig"].set_xticks([-1, 0, 1])
+axes["eig"].set_xticklabels([-1, 0, 1], fontweight="normal")
+axes["eig-sham"].set_xticks([-1, 0, 1])
+axes["eig-sham"].set_xticklabels([-1, 0, 1], fontweight="normal")
 axes["fix-sham"].set_yticks([])
 axes["eig-sham"].set_yticks([])
 axes["fix"].set_xticks([])
 axes["fix"].set_xlabel("")
 axes["fix"].set_ylabel("Frequency (Hz)")
+axes["fix"].set_yticks([10, 12, 14, 16, 18, 20])
+axes["fix"].set_yticklabels([10, 12, 14, 16, 18, 20], fontweight="normal")
 axes["fix-sham"].set_xticks([])
 axes["fix-sham"].set_xlabel("")
 axes["fix-sham"].set_ylabel("")
 axes["eig"].set_xlabel("Time (s)")
 axes["eig"].set_ylabel("Frequency (Hz)")
+axes["eig"].set_yticks([10, 12, 14, 16, 18, 20])
+axes["eig"].set_yticklabels([10, 12, 14, 16, 18, 20], fontweight="normal")
 axes["eig-sham"].set_xlabel("Time (s)")
 axes["eig-sham"].set_ylabel("")
 axes["blank1"].axis("off")
@@ -349,7 +369,7 @@ axes["fix"].set_title("Fixed frequency")
 axes["fix-sham"].set_title("Fixed - Sham")
 axes["eig-sham"].set_title("Eigen - Sham")
 
-axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc), fontsize=32)
+axes["blank1"].set_title("LME model predictions of {} spindle power".format(osc), fontsize=40)
 fig.suptitle("")
 fig.tight_layout()
 fig.savefig("../images/lmmtfr_fig1_{}_{}_{}_{}_{}.tif".format(osc, badsubjs, use_group, sync_fact, order_idx))

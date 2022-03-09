@@ -13,8 +13,9 @@ import matplotlib.pyplot as plt
 import pickle
 plt.ion()
 import matplotlib
+import matplotlib
 font = {'weight' : 'bold',
-        'size'   : 40}
+        'size'   : 48}
 matplotlib.rc('font', **font)
 
 def do_erpac(ep, epo, cut, baseline=None, fit_args={"mcp":"fdr", "p":0.05,
@@ -135,15 +136,15 @@ power_freqs = (5, 25)
 conds = ["eig", "fix"]
 conds = ["fix"]
 durs = ["30s", "2m", "5m"]
-osc_cuts = {"SO":(-1.5,1.5),"deltO":(-.75,.75)}
+osc_cuts = {"SO":(-1.5,1.5),"deltO":(-1,1)}
 baseline = (-2.35, -1.5)
 #baseline = None
 method = "wavelet"
 exclude = ["002", "003", "028", "007", "051"]
 p = 0.05
-n_perm = 1000
+n_perm = 1024
 tfce_thresh = dict(start=0, step=0.2)
-recalc = True
+recalc = False
 
 f_amp = np.linspace(power_freqs[0],power_freqs[1],50)
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
@@ -183,9 +184,9 @@ for osc in osc_types:
         else:
             results = np.load("{}{}_erpac_perm.npy".format(proc_dir, cond))
 
-        pos_thresh_val = np.quantile(results, 1-p)
+        pos_thresh_val = np.quantile(results[:,0], 1-p/2)
         erpac_pos_mask = erpac_c > pos_thresh_val
-        neg_thresh_val = np.quantile(results, p)
+        neg_thresh_val = np.quantile(results[:,1], p/2)
         erpac_neg_mask = erpac_c < neg_thresh_val
         erpac_mask = ~(erpac_pos_mask | erpac_neg_mask)
 
@@ -194,32 +195,34 @@ for osc in osc_types:
         tfr = tfr_morlet(e, f_amp[:-1], n_cycles=5, average=False, return_itc=False)
         tfr = tfr.average()
 
-        fig, ax = plt.subplots(figsize=(24,19.2))
-        # ep.pacplot(erpac.squeeze(), times, ep.yvec,
-        #            pvalues=ep.pvalues.squeeze(), p=p)
-        # ep.pacplot(erpac_mask.squeeze(), times, ep.yvec)
+        fig, ax = plt.subplots(figsize=(19.2,19.2))
         tfr.data[0,:,:] = erpac_z.squeeze()
         tfr.plot(mask=erpac_mask, mask_style="contour", cmap="inferno",
                  vmin=-3, vmax=3, axes=ax, picks="central")
-        # plt.title("{} ERPAC {}, phase at {}-{}Hz ({} transform)".format(osc,
-        #                                                                 cond,
-        #                                                                 pf[0],
-        #                                                                 pf[1],
-        #                                                                 method))
-        plt.ylabel("Frequency (Hz)", fontdict={"size":36})
-        plt.xlabel("Time (s)", fontdict={"size":36})
+
+        plt.ylabel("Frequency (Hz)")
+        plt.xlabel("Time (s)")
+        ax.set_xticks([-1, 0, 1])
+        ax.set_xticklabels([-1, 0, 1], fontweight="normal")
+        ax.set_yticks([10, 15, 20])
+        ax.set_yticklabels([10, 15, 20], fontweight="normal")
+        cbar = ax.images[-1].colorbar
+        fig.axes[-1].set_ylabel("Normalised differene")
+        cbar.set_ticks([-3, -2, -1, 0, 1, 2, 3])
+        fig.axes[-1].set_yticklabels([-3, -2, -1, 0, 1, 2, 3], fontweight="normal")
+        plt.ylim(8, 22)
 
         cut_inds = epo.time_as_index((osc_cut[0], osc_cut[1]))
         evo = cond_epo.average().data[0,cut_inds[0]:cut_inds[1]]
         evo = (evo - evo.min())/(evo.max()-evo.min())
-        evo = evo*7 + 11
+        evo = evo*5 + 11
 
         plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
         if cond == "fix":
             cond_txt = "Fixed"
         elif cond=="eig":
             cond_txt = "Eigen"
-        plt.suptitle("ERPAC for {}, normalised difference: {} - Sham".format(osc, cond_txt))
+        plt.suptitle("ERPAC for {}, normalised difference: {} - Sham".format(osc, cond_txt), fontsize=40)
         plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
         plt.savefig("../images/ERPAC_{}_{}_{}.svg".format(osc, cond, method))
 
@@ -256,4 +259,4 @@ for osc in osc_types:
         #     print("Mean at {:.2f}s, {:.1f}Hz: {:.2f}".format(times[minpoint[1]],
         #                                              ep.yvec[minpoint[0]],
         #                                              pt_power.mean()))
-            #breakpoint()
+        #     breakpoint()

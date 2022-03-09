@@ -7,7 +7,7 @@ font = {'weight' : 'bold',
         'size'   : 28}
 matplotlib.rc('font', **font)
 
-exclude = ["002", "003", "028", "014", "051"]
+exclude = ["002", "003", "028", "007", "051"]
 
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"

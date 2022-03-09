@@ -21,9 +21,9 @@ proc_dir = root_dir+"proc/"
 
 iter_num = 64
 baseline = "zscore"
-osc = "SO"
+osc = "deltO"
 sync_fact = "rsyncfact"
-bad_subjs = "no2,3,28,14,51"
+bad_subjs = "no2,3,28,7,51"
 use_group = "group"
 tfce_thresh = dict(start=0, step=0.2)
 minmax_ts = {}

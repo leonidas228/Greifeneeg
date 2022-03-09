@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, color="blue",
-                  area_fill=True, alpha=1):
+                  area_fill=True, alpha=1, dot_size=2):
     """
     Produce a circular histogram of angles on ax.
 
@@ -80,13 +80,15 @@ def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, color="blue
 
 def circ_hist_norm(ax, x, points=None, vecs=None, bins=16, density=True, offset=0,
                    gaps=True, color="blue", area_fill=True, alpha=1,
-                   points_col=None):
+                   points_col=None, dot_size=2):
     n, bins, patches, r_max = circular_hist(ax, x, bins=bins, density=density,
                                             offset=offset, gaps=gaps, color=color,
-                                            area_fill=area_fill, alpha=alpha)
+                                            area_fill=area_fill, alpha=alpha,
+                                            dot_size=dot_size)
     if points is not None:
         full_points = np.array([(x, r_max) for x in np.nditer(points)])
-        ax.scatter(full_points[:,0], full_points[:,1], c=points_col)
+        ax.scatter(full_points[:,0], full_points[:,1], s=dot_size,
+                   facecolors="None", edgecolors=points_col, linewidths=3.5)
     if vecs is not None:
         for vec in vecs:
             r = np.arange(0, r_max*vec[0][1], 0.01)

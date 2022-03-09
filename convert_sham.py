@@ -14,7 +14,7 @@ elif isdir("/home/jeff"):
 
 proc_dir = root_dir+"proc/" # save the processed files here
 proclist = listdir(proc_dir) # and in proc directory
-overwrite = True # skip
+overwrite = False # skip
 analy_time = 60
 dur_key = {"30s":30, "2m":120, "5m":300}
 l_freq = 0.1

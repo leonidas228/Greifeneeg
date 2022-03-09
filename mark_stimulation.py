@@ -29,6 +29,7 @@ picks = ["Fz","AFz","Fp1","Fp2","FC1","FC2","Cz"]
 dur_dict = {344:"5m", 165:"2m", 73:"30s"}
 n_jobs = 8
 post_only = True
+do_subj = "043"
 
 with open("stim_info.csv", "wt") as f:
     f.write("Subject\tBlock\tBegin\tEnd\tLength\tTotal\n")
@@ -39,6 +40,8 @@ for filename in filelist:
     this_match = re.match("f_NAP_(\d{3})_T(\d)-raw.fif",filename)
     if this_match:
         subj, tag = this_match.group(1), int(this_match.group(2))
+        # if subj != do_subj:
+        #     continue
         if tag < 2:
             raw = mne.io.Raw(proc_dir+filename,preload=True)
             raw.save("{}af_NAP_{}_{}-raw.fif".format(proc_dir, subj, tag),

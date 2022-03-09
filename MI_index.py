@@ -17,18 +17,18 @@ proc_dir = root_dir+"proc/"
 
 n_jobs = 4
 chan = "central"
-osc_types = ["SO", "deltO"]
-#osc_types = ["SO"]
+#osc_types = ["SO", "deltO"]
+osc_types = ["SO"]
 sfreq = 100.
-phase_freqs = [(0.16, 1.25),(1.25, 4)]
+phase_freqs = [(0.5, 1.25),(1.25, 4)]
 power_freqs = (12, 15)
 conds = ["sham", "eig", "fix"]
 durs = ["30s", "2m", "5m"]
-osc_cuts = [(.25,.65),(-.75,.75)]
+osc_cuts = [(.275,.6),(-.75,.75)]
 method = "wavelet"
-exclude = ["002", "003", "028" "007", "051"]
+exclude = ["002", "003", "028", "007", "051"]
 baseline = (-2.35, -1.5)
-baseline = None
+#baseline = None
 f_amp=np.linspace(power_freqs[0],power_freqs[1],10)
 
 epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
@@ -37,7 +37,6 @@ for excl in exclude:
     epo = epo["Subj!='{}'".format(excl)]
 epo.resample(sfreq, n_jobs="cuda")
 
-osc_types = ["SO", "deltO"]
 epos = []
 dfs = []
 for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
@@ -60,7 +59,6 @@ for osc, osc_cut, pf in zip(osc_types, osc_cuts, phase_freqs):
         bl = power[...,base_inds[0]:base_inds[1]]
         bl_mu = bl.mean(axis=-1, keepdims=True)
         bl_std = bl.std(axis=-1, keepdims=True)
-        breakpoint()
         power = (power - bl_mu) / bl_std
     else:
         base_text = "nobl"
