@@ -7,8 +7,6 @@ import re
 # for other users
 if isdir("/home/jev"):
     root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
 
 raw_dir = root_dir+"raw/" # get raw files from here
 proc_dir = root_dir+"proc/" # save the processed files here
@@ -28,10 +26,13 @@ for filename in filelist: # cycle through all files in raw directory
             continue
         # if subj != do_subj:
         #     continue
-        raw = mne.io.read_raw_brainvision(raw_dir+filename) # convert
-        if "NAP_{}_T{}_2.vhdr".format(subj, tag) in filelist:
-            print("Caught a _2 version.")
-            raw_2 = mne.io.read_raw_brainvision(raw_dir+"NAP_{}_T{}_2.vhdr".format(subj, tag))
-            raw.append([raw_2])
-        raw.save("{}NAP_{}_T{}-raw.fif".format(proc_dir, subj, tag),
-                 overwrite=overwrite) # save
+        try:
+            raw = mne.io.read_raw_brainvision(raw_dir+filename) # convert
+            if "NAP_{}_T{}_2.vhdr".format(subj, tag) in filelist:
+                print("Caught a _2 version.")
+                raw_2 = mne.io.read_raw_brainvision(raw_dir+"NAP_{}_T{}_2.vhdr".format(subj, tag))
+                raw.append([raw_2])
+            raw.save("{}NAP_{}_T{}-raw.fif".format(proc_dir, subj, tag),
+                     overwrite=overwrite) # save
+        except:
+            continue
