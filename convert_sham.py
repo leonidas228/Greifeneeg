@@ -6,11 +6,7 @@ import numpy as np
 
 # different directories for home and office computers; not generally relevant
 # for other users
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
-
+root_dir = "/home/jev/hdd/sfb/"
 
 proc_dir = root_dir+"proc/" # save the processed files here
 proclist = listdir(proc_dir) # and in proc directory

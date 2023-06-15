@@ -4,10 +4,9 @@ from os.path import isdir
 import re
 import numpy as np
 
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
+
+root_dir = "/home/jev/hdd/sfb/"
+
 proc_dir = root_dir+"proc/"
 filelist = listdir(proc_dir)
 proclist = listdir(proc_dir) # and in proc directory
@@ -16,6 +15,7 @@ do_subj = "043"
 
 l_freq = 0.1
 h_freq = 200
+n_jobs = 1
 
 for filename in filelist:
     this_match = re.search("NAP_(\d{3})_T(\d)-raw.fif",filename)
@@ -27,8 +27,8 @@ for filename in filelist:
         # if subj != do_subj:
         #     continue
         raw = mne.io.Raw(proc_dir+filename, preload=True)
-        raw.filter(l_freq=l_freq, h_freq=h_freq, n_jobs="cuda")
-        raw.notch_filter(np.arange(50,h_freq,50), n_jobs="cuda")
+        raw.filter(l_freq=l_freq, h_freq=h_freq, n_jobs=n_jobs)
+        raw.notch_filter(np.arange(50,h_freq,50), n_jobs=n_Jobs)
 
         # special cases
         if subj == "021" and tag == "2":

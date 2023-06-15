@@ -4,10 +4,8 @@ from os.path import isdir
 import re
 import numpy as np
 
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
+
+root_dir = "/home/jev/hdd/sfb/"
 proc_dir = root_dir+"proc/"
 proc_dir = root_dir+"proc/"
 filelist = listdir(proc_dir)

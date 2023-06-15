@@ -11,6 +11,10 @@ Grabs Brainvision raw sham data from a directory, converts to MNE-Python -raw.fi
 Specifically, these sham files have their sham stimulation periods already
 marked by hand. Results are saved directly as *af*sham-raw.fif
 
+### do_gssc.py
+Grabs -raw.fif files, filters to 0.3-30Hz, runs GSSC and saves results either
+as a CSV file or MNE-Python annotation file.
+
 ### dofilter.py
 Grabs -raw.fif files, filters, and saves as f*-raw.fif files
 
@@ -47,3 +51,7 @@ aibscaf*-raw.fif. Epoching is also done with the down state trough as the
 CHANNEL is the name of the ROI (typically "central"). This epoch file also
 has an extensive metadata, which gives all sorts of information about each
 epoch.
+
+### epo_drop.py
+Grabs the epo files output by mark_osc.py and drops noisy epochs. Outputs
+with d_*-epo.fif

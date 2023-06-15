@@ -5,8 +5,7 @@ import re
 
 # different directories for home and office computers; not generally relevant
 # for other users
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
+root_dir = "/home/jev/hdd/sfb/"
 
 raw_dir = root_dir+"raw/" # get raw files from here
 proc_dir = root_dir+"proc/" # save the processed files here

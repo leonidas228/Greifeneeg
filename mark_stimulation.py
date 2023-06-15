@@ -10,10 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 plt.ion()
 
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
+root_dir = "/home/jev/hdd/sfb/"
 
 proc_dir = root_dir+"proc/"
 tfr_thresh_range = list(np.linspace(0.001,0.008,50))

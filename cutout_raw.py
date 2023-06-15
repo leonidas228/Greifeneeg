@@ -3,10 +3,9 @@ from os import listdir
 import re
 from os.path import isdir
 
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
+
+root_dir = "/home/jev/hdd/sfb/"
+
 proc_dir = root_dir+"proc/"
 conds = ["eig5m","fix5m","eig2m","fix2m","eig30s","fix30s", "sham30s", "sham2m", "sham5m"]
 #conds = ["sham30s", "sham2m", "sham5m"]
