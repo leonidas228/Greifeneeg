@@ -55,3 +55,5 @@ epoch.
 ### epo_drop.py
 Grabs the epo files output by mark_osc.py and drops noisy epochs. Outputs
 with d_*-epo.fif
+
+### epo_cat.py
