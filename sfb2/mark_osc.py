@@ -78,7 +78,8 @@ def mark_osc_amp(osc_events, amp_thresh, chan_name, mm_times, osc_type,
 
 
 
-chan_groups = {"central":["Fz","FC1","FC2", "Cz","CP1","CP2"]}
+chan_groups = {"frontal":["Fz", "FC1","FC2"],
+               "parietal":["Cz","CP1","CP2"]}
 amp_percentile = 65
 min_samples = 10
 minmax_freqs = [(0.16, 1.25), (0.75, 4.25)]
@@ -92,6 +93,7 @@ proc_dir = join(root_dir, "proc")
 
 overwrite = True
 filelist = listdir(proc_dir)
+bad_list = []
 for filename in filelist:
     this_match = re.match("cp_NAP_(\d{4})_(.*)-raw.fif", filename)
     if not this_match:
@@ -107,25 +109,31 @@ for filename in filelist:
     print(bad_chans)
     raw.info["bads"].extend(bad_chans)
     # produce channel-ROI averages
-    for k,v in chan_groups.items():
+    passed = np.zeros(len(chan_groups), dtype=bool)
+    for idx, (k,v) in enumerate(chan_groups.items()):
         pick_list = [vv for vv in v if vv not in raw.info["bads"]]
         if not len(pick_list):
             print("No valid channels")
-            breakpoint()
+            continue
         avg_signal = raw.get_data(pick_list).mean(axis=0, keepdims=True)
         avg_info = mne.create_info([k], raw.info["sfreq"], ch_types="eeg")
         avg_raw = mne.io.RawArray(avg_signal, avg_info)
         raw.add_channels([avg_raw], force_update_info=True)
-    # ROIs only, drop everything else
+        passed[idx] = 1
+    if not all(passed):
+        print("Could not produce valid ROIs")
+        bad_list.append(filename)
+        continue
+    # ROIs only, drop everything els
     raw.pick_channels(list(chan_groups.keys()))
+
     for minmax_freq, minmax_time, osc_type in zip(minmax_freqs, minmax_times, osc_types):
         raw_work = raw.copy()
         raw_work.filter(l_freq=minmax_freq[0], h_freq=minmax_freq[1])
         first_time = raw_work.first_samp / raw_work.info["sfreq"]
 
-
         # zero crossings
-        for k in chan_groups.keys():
+        for k in raw.ch_names:
             pick_ind = mne.pick_channels(raw_work.ch_names, include=[k])
             signal = raw_work.get_data()[pick_ind,].squeeze()
 
@@ -156,7 +164,8 @@ for filename in filelist:
                 osc_events.append(OscEvent(time0, time1, peak_time,
                                             peak_amp, trough_time, trough_amp))
             # get percentiles of peaks and troughs
-            osc_events = [oe for oe in osc_events if (oe.end_time-oe.start_time)>minmax_time[0] and (oe.end_time-oe.start_time)<minmax_time[1]]
+            osc_events = [oe for oe in osc_events if (oe.end_time-oe.start_time)>minmax_time[0] and 
+                          (oe.end_time-oe.start_time)<minmax_time[1]]
             peaks, troughs = osc_peaktroughs(osc_events)
             amps = peaks - troughs
             amp_thresh = np.percentile(amps, amp_percentile)
@@ -187,13 +196,14 @@ for filename in filelist:
                 continue
 
             events = mne.events_from_annotations(raw, check_trough_annot)
-            df_dict = {"Subj":[],"Cond":[],"Index":[],
+            df_dict = {"Subj":[],"Cond":[],"Index":[], "ROI":[],
                         "OscType":[], "OscLen":[], "OscFreq":[]}
             for event_idx, event in enumerate(events[0][:,-1]):
                 eve = event.copy()
                 df_dict["Index"].append(int(eve))
                 df_dict["Subj"].append(subj)
                 df_dict["Cond"].append(cond)
+                df_dict["ROI"].append(k)
                 df_dict["OscType"].append(osc_type)
                 df_dict["OscLen"].append(marked_oe[event_idx].end_time - marked_oe[event_idx].start_time)
                 df_dict["OscFreq"].append(1/df_dict["OscLen"][-1])
@@ -202,6 +212,8 @@ for filename in filelist:
             epo = mne.Epochs(raw, events[0], tmin=-2.5, tmax=2.5, detrend=1,
                              baseline=None, metadata=df, event_repeated="drop",
                              reject={"eeg":5e-4}).load_data()
+            if len(epo.ch_names) < 2:
+                breakpoint()
             if len(epo) < 5:
                 breakpoint()
             raw.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}-raw.fif"),

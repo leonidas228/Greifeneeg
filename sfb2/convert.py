@@ -4,24 +4,26 @@ from os.path import isdir, join
 import re
 
 # key for subject, conditions/filenames
-subj_key = {"1001":{"T1":"anodal", "T3":"sham", "T4(2)":"cathodal"},
-            "1002":{"T1":"sham", "T3":"anodal", "T4":"cathodal"},
-            "1003":{"T1":"anodal", "T3":"sham", "T4.2":"cathodal"},
-            "1004":{"T2":"sham", "T3":"anodal", "T4":"cathodal"},
-            "1005":{"T1":"sham", "T2":"anodal", "T4":"cathodal"},
-            "1006":{"T1":"sham", "T3":"anodal", "T4":"cathodal"},
-            "1008":{"T1":"sham", "T2":"anodal", "T4":"cathodal"},
-            "1011":{"T1":"sham", "T2":"anodal", "t4":"cathodal"},
-            "1012":{"T2":"sham", "T3":"anodal", "T4":"cathodal"},
-            "1013":{"T1":"anodal", "T3":"sham", "T4":"cathodal"},
-            "1020":{"T1":"sham", "T2":"anodal", "T4":"cathodal"},
-            "1021":{"T1":"anodal", "T2":"sham", "T4":"cathodal"},
-            "1023":{"T1":"anodal", "T2":"sham", "T4":"cathodal"},
-            "1026":{"T1":"sham", "T3":"anodal", "T4":"cathodal"},
-            "1036":{"T1":"sham", "T3":"anodal", "T4(2)_2":"cathodal"},
-            "1038":{"T1":"sham", "T3":"anodal", "T4":"cathodal"},
-            #"1042":{"T1":"sham", "T3":"anodal", "T4":"cathodal"},
-}
+subj_key = {
+    '1001': {'anodal': 'T1', 'sham': 'T3', 'cathodal': 'T4(2)'}, 
+    '1002': {'sham': 'T1', 'anodal': 'T3', 'cathodal': 'T4'},
+    '1003': {'anodal': 'T1', 'sham': 'T3', 'cathodal': 'T4.2'}, 
+    '1004': {'sham': 'T2', 'anodal': 'T3', 'cathodal': 'T4'}, 
+    '1005': {'sham': 'T1', 'anodal': 'T2', 'cathodal': 'T4'}, 
+    '1006': {'sham': 'T1', 'anodal': 'T3', 'cathodal': 'T4'}, 
+    '1008': {'sham': 'T1', 'anodal': 'T2', 'cathodal': 'T4'}, 
+    '1011': {'sham': 'T1', 'anodal': 'T2', 'cathodal': 't4'}, 
+    '1012': {'sham': 'T2', 'anodal': ['T3', 't3 weiter'], 'cathodal': 'T4'}, 
+    '1013': {'anodal': 'T1', 'sham': 'T3', 'cathodal': 'T4'}, 
+    '1020': {'sham': 'T1', 'anodal': ['T2', 'T2 weiter'], 'cathodal': 'T4'}, 
+    '1021': {'anodal': 'T1', 'sham': 'T2', 'cathodal': 'T4'}, 
+    '1023': {'anodal': 'T1', 'sham': 'T2', 'cathodal': 'T4'}, 
+    '1026': {'sham': ['T1', 'T1_2'], 'anodal': ['T3', 'T3_weiter', 'T3_weiter2'], 'cathodal': 'T4'}, 
+    '1036': {'sham': 'T1', 'anodal': 'T3', 'cathodal':['T4(2)', 'T4(2)_2']}, 
+    '1038': {'sham': ['T1', 'T1_14_56', 't1_14_58', 'T1_15_14'], 'anodal': 'T2', 'cathodal': 'T4'},
+    '1042': {'sham':'T1', 'anodal':['T3', 'T3_neu', 'T3_neu2', 't3_neu3', 't3_neu4'],
+             'cathodal':['T4', 'T4_neu', 'T4_neu2', 't4_neu3', 'T4_neu4']}
+    }
 
 root_dir = "/home/jev/hdd/sfb2/"
 
@@ -41,8 +43,15 @@ for dirname in filelist: # cycle through all files in raw directory
         continue
     this_dir = join(raw_dir, dirname)
     for k, v in subj_key[subj].items():
-        filepath = join(this_dir, f"NAP_{subj}_{k}.vhdr")
-        raw = mne.io.read_raw_brainvision(filepath) # convert
-        raw.save(join(proc_dir, f"NAP_{subj}_{v}-raw.fif"),
-                 overwrite=overwrite)
+        raws = []
+        # for merging, uses list of Raws; in the case there is no merging, make a list of length one
+        if isinstance(v, str):
+            v = [v]
+        for vv in v:
+            filepath = join(this_dir, f"NAP_{subj}_{vv}.vhdr")
+            raw = mne.io.read_raw_brainvision(filepath) # convert
+            raws.append(raw)
+        raw = mne.concatenate_raws(raws)
+        raw.save(join(proc_dir, f"NAP_{subj}_{k}-raw.fif"),
+                overwrite=overwrite)
 

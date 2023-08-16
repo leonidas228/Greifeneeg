@@ -23,7 +23,7 @@ exclude = ["1038", "1026", "1036"]
 overwrite = True
 
 pre_trig = 70 # go back this far from the trigger
-duration = 120
+duration = 100
 
 filenames = listdir(proc_dir)
 for filename in filenames:
