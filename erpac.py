@@ -120,143 +120,145 @@ def do_erpac_perm(epo_a, epo_b, cut, baseline=None, n_perm=1000,
 
     return results
 
-if isdir("/home/jev"):
-    root_dir = "/home/jev/hdd/sfb/"
-elif isdir("/home/jeff"):
-    root_dir = "/home/jeff/hdd/jeff/sfb/"
-proc_dir = root_dir+"proc/"
+if __name__ == "__main__":
 
-n_jobs = 2
-chan = "central"
-osc_types = ["SO", "deltO"]
-osc_types = ["SO"]
-sfreq = 200.
-phase_freqs = {"SO":(0.5, 1.25),"deltO":(1.25, 4)}
-power_freqs = (5, 25)
-conds = ["eig", "fix"]
-conds = ["fix"]
-durs = ["30s", "2m", "5m"]
-osc_cuts = {"SO":(-1.5,1.5),"deltO":(-1,1)}
-baseline = (-2.35, -1.5)
-#baseline = None
-method = "wavelet"
-exclude = ["002", "003", "028", "007", "051"]
-p = 0.05
-n_perm = 1024
-tfce_thresh = dict(start=0, step=0.2)
-recalc = False
+    if isdir("/home/jev"):
+        root_dir = "/home/jev/hdd/sfb/"
+    elif isdir("/home/jeff"):
+        root_dir = "/home/jeff/hdd/jeff/sfb/"
+    proc_dir = root_dir+"proc/"
 
-f_amp = np.linspace(power_freqs[0],power_freqs[1],50)
-epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
-                      preload=True)
-for excl in exclude:
-    epo = epo["Subj!='{}'".format(excl)]
-epo.resample(sfreq, n_jobs="cuda")
+    n_jobs = 2
+    chan = "central"
+    osc_types = ["SO", "deltO"]
+    osc_types = ["SO"]
+    sfreq = 200.
+    phase_freqs = {"SO":(0.5, 1.25),"deltO":(1.25, 4)}
+    power_freqs = (5, 25)
+    conds = ["eig", "fix"]
+    conds = ["fix"]
+    durs = ["30s", "2m", "5m"]
+    osc_cuts = {"SO":(-1.5,1.5),"deltO":(-1,1)}
+    baseline = (-2.35, -1.5)
+    #baseline = None
+    method = "wavelet"
+    exclude = ["002", "003", "028", "007", "051"]
+    p = 0.05
+    n_perm = 1024
+    tfce_thresh = dict(start=0, step=0.2)
+    recalc = False
 
-epos = []
-dfs = []
-for osc in osc_types:
-    osc_epo = epo["OscType == '{}'".format(osc)]
-    pf = phase_freqs[osc]
-    osc_cut = osc_cuts[osc]
-    ep = ERPAC(f_pha=pf, f_amp=f_amp, dcomplex=method)
-    sham_epo = osc_epo["StimType == 'sham'"]
-    sham_erpac, times, sham_n = do_erpac(ep, sham_epo, osc_cut, baseline=baseline)
-    erpacs = []
-    ns = []
-    for cond in conds:
-        cond_epo = osc_epo["StimType == '{}'".format(cond)]
-        erpac, times, n = do_erpac(ep, cond_epo, osc_cut, baseline=baseline)
-        erpacs.append(erpac)
-        ns.append(n)
+    f_amp = np.linspace(power_freqs[0],power_freqs[1],50)
+    epo = mne.read_epochs("{}grand_{}_finfo-epo.fif".format(proc_dir, chan),
+                        preload=True)
+    for excl in exclude:
+        epo = epo["Subj!='{}'".format(excl)]
+    epo.resample(sfreq, n_jobs="cuda")
 
-        erpac_z, erpac_p = compare_rho(sham_erpac, sham_n, erpac, n, fdr=None)
-        erpac_z = erpac_z.squeeze()
-        erpac_c = _find_clusters(erpac_z, threshold=tfce_thresh)
-        erpac_c = np.reshape(erpac_c[1], erpac_z.shape)
+    epos = []
+    dfs = []
+    for osc in osc_types:
+        osc_epo = epo["OscType == '{}'".format(osc)]
+        pf = phase_freqs[osc]
+        osc_cut = osc_cuts[osc]
+        ep = ERPAC(f_pha=pf, f_amp=f_amp, dcomplex=method)
+        sham_epo = osc_epo["StimType == 'sham'"]
+        sham_erpac, times, sham_n = do_erpac(ep, sham_epo, osc_cut, baseline=baseline)
+        erpacs = []
+        ns = []
+        for cond in conds:
+            cond_epo = osc_epo["StimType == '{}'".format(cond)]
+            erpac, times, n = do_erpac(ep, cond_epo, osc_cut, baseline=baseline)
+            erpacs.append(erpac)
+            ns.append(n)
 
-        #ep.pacplot(erpac_c, times, ep.yvec)
+            erpac_z, erpac_p = compare_rho(sham_erpac, sham_n, erpac, n, fdr=None)
+            erpac_z = erpac_z.squeeze()
+            erpac_c = _find_clusters(erpac_z, threshold=tfce_thresh)
+            erpac_c = np.reshape(erpac_c[1], erpac_z.shape)
 
-        if recalc:
-            results = do_erpac_perm(sham_epo, cond_epo, osc_cut, baseline=baseline)
-            results = np.array(results)
-            np.save("{}{}_erpac_perm.npy".format(proc_dir, cond), results)
-        else:
-            results = np.load("{}{}_erpac_perm.npy".format(proc_dir, cond))
+            #ep.pacplot(erpac_c, times, ep.yvec)
 
-        pos_thresh_val = np.quantile(results[:,0], 1-p/2)
-        erpac_pos_mask = erpac_c > pos_thresh_val
-        neg_thresh_val = np.quantile(results[:,1], p/2)
-        erpac_neg_mask = erpac_c < neg_thresh_val
-        erpac_mask = ~(erpac_pos_mask | erpac_neg_mask)
+            if recalc:
+                results = do_erpac_perm(sham_epo, cond_epo, osc_cut, baseline=baseline)
+                results = np.array(results)
+                np.save("{}{}_erpac_perm.npy".format(proc_dir, cond), results)
+            else:
+                results = np.load("{}{}_erpac_perm.npy".format(proc_dir, cond))
 
-        # make mne tfr template for plotting
-        e = epo[0].crop(tmin=osc_cut[0], tmax=osc_cut[1]-1/sfreq)
-        tfr = tfr_morlet(e, f_amp[:-1], n_cycles=5, average=False, return_itc=False)
-        tfr = tfr.average()
+            pos_thresh_val = np.quantile(results[:,0], 1-p/2)
+            erpac_pos_mask = erpac_c > pos_thresh_val
+            neg_thresh_val = np.quantile(results[:,1], p/2)
+            erpac_neg_mask = erpac_c < neg_thresh_val
+            erpac_mask = ~(erpac_pos_mask | erpac_neg_mask)
 
-        fig, ax = plt.subplots(figsize=(19.2,19.2))
-        tfr.data[0,:,:] = erpac_z.squeeze()
-        tfr.plot(mask=erpac_mask, mask_style="contour", cmap="inferno",
-                 vmin=-3, vmax=3, axes=ax, picks="central")
+            # make mne tfr template for plotting
+            e = epo[0].crop(tmin=osc_cut[0], tmax=osc_cut[1]-1/sfreq)
+            tfr = tfr_morlet(e, f_amp[:-1], n_cycles=5, average=False, return_itc=False)
+            tfr = tfr.average()
 
-        plt.ylabel("Frequency (Hz)")
-        plt.xlabel("Time (s)")
-        ax.set_xticks([-1, 0, 1])
-        ax.set_xticklabels([-1, 0, 1], fontweight="normal")
-        ax.set_yticks([10, 15, 20])
-        ax.set_yticklabels([10, 15, 20], fontweight="normal")
-        cbar = ax.images[-1].colorbar
-        fig.axes[-1].set_ylabel("Normalised differene")
-        cbar.set_ticks([-3, -2, -1, 0, 1, 2, 3])
-        fig.axes[-1].set_yticklabels([-3, -2, -1, 0, 1, 2, 3], fontweight="normal")
-        plt.ylim(8, 22)
+            fig, ax = plt.subplots(figsize=(19.2,19.2))
+            tfr.data[0,:,:] = erpac_z.squeeze()
+            tfr.plot(mask=erpac_mask, mask_style="contour", cmap="inferno",
+                    vmin=-3, vmax=3, axes=ax, picks="central")
 
-        cut_inds = epo.time_as_index((osc_cut[0], osc_cut[1]))
-        evo = cond_epo.average().data[0,cut_inds[0]:cut_inds[1]]
-        evo = (evo - evo.min())/(evo.max()-evo.min())
-        evo = evo*5 + 11
+            plt.ylabel("Frequency (Hz)")
+            plt.xlabel("Time (s)")
+            ax.set_xticks([-1, 0, 1])
+            ax.set_xticklabels([-1, 0, 1], fontweight="normal")
+            ax.set_yticks([10, 15, 20])
+            ax.set_yticklabels([10, 15, 20], fontweight="normal")
+            cbar = ax.images[-1].colorbar
+            fig.axes[-1].set_ylabel("Normalised differene")
+            cbar.set_ticks([-3, -2, -1, 0, 1, 2, 3])
+            fig.axes[-1].set_yticklabels([-3, -2, -1, 0, 1, 2, 3], fontweight="normal")
+            plt.ylim(8, 22)
 
-        plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
-        if cond == "fix":
-            cond_txt = "Fixed"
-        elif cond=="eig":
-            cond_txt = "Eigen"
-        plt.suptitle("ERPAC for {}, normalised difference: {} - Sham".format(osc, cond_txt), fontsize=40)
-        plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
-        plt.savefig("../images/ERPAC_{}_{}_{}.svg".format(osc, cond, method))
+            cut_inds = epo.time_as_index((osc_cut[0], osc_cut[1]))
+            evo = cond_epo.average().data[0,cut_inds[0]:cut_inds[1]]
+            evo = (evo - evo.min())/(evo.max()-evo.min())
+            evo = evo*5 + 11
 
-        # # get clusters of significant points and examine them at maxima
-        # # (p-value minima)
-        # p_vals = ep.pvalues.squeeze()
-        # p_thr = (p_vals<0.035).astype(int)
-        # clusters, sums = _find_clusters(p_thr, 0.99)
-        # for clust in clusters:
-        #     clu = np.reshape(clust, p_thr.shape)
-        #     inds = np.where(clu)
-        #     minpoint = (inds[0][np.argmin(p_vals[inds])],
-        #                 inds[1][np.argmin(p_vals[inds])])
-        #     pt_power = power[minpoint[0], :, minpoint[1]]
-        #     pt_phase = phase[0, :, minpoint[1]]
-        #
-        #     phase_range = np.linspace(-np.pi, np.pi, 37)
-        #     binned_phases = np.digitize(pt_phase, phase_range)
-        #     phase_bins = [phase_range[x] + (phase_range[x+1]-phase_range[x])/2
-        #                   for x in range(len(phase_range)-1)]
-        #     bin_avgs = np.zeros_like(phase_bins)
-        #     for pb_idx, pb in enumerate(phase_bins):
-        #         bin_avgs[pb_idx] = pt_power[binned_phases==pb_idx+1].mean()
-        #
-        #
-        #     plt.figure()
-        #     ax = plt.subplot(1,1,1,projection="polar")
-        #     #ax.scatter(pt_phase, pt_power, alpha=0.1)
-        #     #ax.set_ylim((0,300))
-        #     plt.bar(phase_bins, bin_avgs)
-        #     plt.title("Phase/Power at {:.2f}s, {:.1f}Hz".format(times[minpoint[1]],
-        #                                                     ep.yvec[minpoint[0]]))
-        #
-        #     print("Mean at {:.2f}s, {:.1f}Hz: {:.2f}".format(times[minpoint[1]],
-        #                                              ep.yvec[minpoint[0]],
-        #                                              pt_power.mean()))
-        #     breakpoint()
+            plt.plot(times, evo, linewidth=10, color="gray", alpha=0.8)
+            if cond == "fix":
+                cond_txt = "Fixed"
+            elif cond=="eig":
+                cond_txt = "Eigen"
+            plt.suptitle("ERPAC for {}, normalised difference: {} - Sham".format(osc, cond_txt), fontsize=40)
+            plt.savefig("../images/ERPAC_{}_{}_{}.png".format(osc, cond, method))
+            plt.savefig("../images/ERPAC_{}_{}_{}.svg".format(osc, cond, method))
+
+            # # get clusters of significant points and examine them at maxima
+            # # (p-value minima)
+            # p_vals = ep.pvalues.squeeze()
+            # p_thr = (p_vals<0.035).astype(int)
+            # clusters, sums = _find_clusters(p_thr, 0.99)
+            # for clust in clusters:
+            #     clu = np.reshape(clust, p_thr.shape)
+            #     inds = np.where(clu)
+            #     minpoint = (inds[0][np.argmin(p_vals[inds])],
+            #                 inds[1][np.argmin(p_vals[inds])])
+            #     pt_power = power[minpoint[0], :, minpoint[1]]
+            #     pt_phase = phase[0, :, minpoint[1]]
+            #
+            #     phase_range = np.linspace(-np.pi, np.pi, 37)
+            #     binned_phases = np.digitize(pt_phase, phase_range)
+            #     phase_bins = [phase_range[x] + (phase_range[x+1]-phase_range[x])/2
+            #                   for x in range(len(phase_range)-1)]
+            #     bin_avgs = np.zeros_like(phase_bins)
+            #     for pb_idx, pb in enumerate(phase_bins):
+            #         bin_avgs[pb_idx] = pt_power[binned_phases==pb_idx+1].mean()
+            #
+            #
+            #     plt.figure()
+            #     ax = plt.subplot(1,1,1,projection="polar")
+            #     #ax.scatter(pt_phase, pt_power, alpha=0.1)
+            #     #ax.set_ylim((0,300))
+            #     plt.bar(phase_bins, bin_avgs)
+            #     plt.title("Phase/Power at {:.2f}s, {:.1f}Hz".format(times[minpoint[1]],
+            #                                                     ep.yvec[minpoint[0]]))
+            #
+            #     print("Mean at {:.2f}s, {:.1f}Hz: {:.2f}".format(times[minpoint[1]],
+            #                                              ep.yvec[minpoint[0]],
+            #                                              pt_power.mean()))
+            #     breakpoint()

@@ -16,7 +16,7 @@ h_freq = 100
 n_jobs = "cuda" # change this to 1 or some higher integer if you don't have CUDA
 sfreq = 200
 
-overwrite = True
+overwrite = False
 filelist = listdir(proc_dir)
 sfreqs = {}
 for filename in filelist:
@@ -37,8 +37,13 @@ for filename in filelist:
     raw.resample(sfreq, n_jobs=n_jobs)
 
     # create EOG/EMG chanenls
-    raw = mne.set_bipolar_reference(raw, "Li", "Re", ch_name="HEOG")
-    raw = mne.set_bipolar_reference(raw, "MovLi", "MovRe", ch_name="Mov")
-    raw = mne.set_bipolar_reference(raw, "Vo", "Vu", ch_name="VEOG")
-    raw.set_channel_types({"HEOG":"eog", "VEOG":"eog", "Mov":"emg"})
+    if "HEOG" not in raw.ch_names:
+        raw = mne.set_bipolar_reference(raw, "Li", "Re", ch_name="HEOG")
+        raw.set_channel_types({"HEOG":"eog"})
+    if "Mov" not in raw.ch_names:
+        raw = mne.set_bipolar_reference(raw, "MovLi", "MovRe", ch_name="Mov")
+        raw.set_channel_types({"Mov":"emg"})
+    if "VEOG" not in raw.ch_names and "Vo" in raw.ch_names and "Vu" in raw.ch_names:
+        raw = mne.set_bipolar_reference(raw, "Vo", "Vu", ch_name="VEOG")
+        raw.set_channel_types({"VEOG":"eog"})
     raw.save(join(proc_dir, outfile), overwrite=overwrite)

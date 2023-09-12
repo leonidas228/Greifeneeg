@@ -138,7 +138,7 @@ for subj in subjs:
         erpac, times, n = do_erpac(ep, epo, (-1.5, 1.5), baseline=(-2.35, -1.5))
         time_inds = (np.where(times==.15)[0][0], np.where(times==.65)[0][0])
         erpac_all = erpac[...,time_inds[0]:time_inds[1]].mean()
-        df_dict[f"{cond}_ERPACAll"].append(erpac_lowband)
+        df_dict[f"{cond}_ERPACAll"].append(erpac_all)
 
     # ERPAC contrasts
     e_r, e_p = compare_rho(df_dict["sham_ERPACLow"][-1], df_dict["sham_EpoN"][-1],

@@ -32,7 +32,6 @@ proc_dir = join(root_dir, "proc") # save the processed files here
 filelist = listdir(raw_dir) # get list of all files in raw directory
 proclist = listdir(proc_dir) # and in proc directory
 overwrite = True # skip
-do_subj = None
 
 # convert
 for dirname in filelist: # cycle through all files in raw directory
@@ -55,3 +54,30 @@ for dirname in filelist: # cycle through all files in raw directory
         raw.save(join(proc_dir, f"NAP_{subj}_{k}-raw.fif"),
                 overwrite=overwrite)
 
+# sfb 1 sham conditions
+subj_key = {
+            "1001":"043_T1",
+            "1002":"053_T1",
+            "1003":"046_T6",
+            "1004":["003_T7", "003_T7b"],
+            "1005":"002_T1",
+            "1006":["021_T1", "021_T1_2"],
+            "1008":"026_T5b",
+            "1011":"046_T6",
+            "1012":"050_T7",
+            "1013":"037_T6",
+            "1023":"025_T1"
+}
+sfb1_dir = "/home/jev/hdd/sfb/raw/"
+for k, v in subj_key.items():
+    raws = []
+    # for merging, uses list of Raws; in the case there is no merging, make a list of length one
+    if isinstance(v, str):
+        v = [v]
+    for vv in v:
+        filepath = join(sfb1_dir, f"NAP_{vv}.vhdr")
+        raw = mne.io.read_raw_brainvision(filepath) # convert
+        raws.append(raw)
+    raw = mne.concatenate_raws(raws)
+    raw.save(join(proc_dir, f"NAP_{k}_sfb1-raw.fif"),
+            overwrite=overwrite)

@@ -18,9 +18,10 @@ proc_dir = join(root_dir, "proc")
 stim_duration = 90
 analy_duration = 60
 gap_idx_range = [1, 3]
-min_stims = 5
+min_stims = 3
 min_n2 = 4 # minimum minutes of N2 sleep for beginning
 min_n2_inter = 1 # same but for interval between stimulations
+overwrite = True
 
 ei = EEGInfer()
 filenames = listdir(proc_dir)
@@ -29,13 +30,23 @@ for filename in filenames:
     if match:
         (subj, cond) = match.groups()
     else:
+        continue
         cond = "blah"
-    if cond != "sham":
+    outfile = f"stim_NAP_{subj}_{cond}-annot.fif"
+    if cond != "sham" and cond != "sfb1":
+        continue
+    if outfile in filenames and not overwrite:
+        print(f"{outfile} already exists. Skipping...")
+        continue
+    (subj, cond) = match.groups()
+    
+    if subj != "1004":
         continue
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
     raw.filter(l_freq=0.3, h_freq=30)
     stages, times = ei.mne_infer(raw, eeg=["C3", "C4"], eog=["HEOG"])
     hypno_annots = mne.Annotations(times, 30., stages.astype("str"))
+    breakpoint()
     ## mark the sham stimulation and pre/post periods
     stim_annots = mne.Annotations([], [], [])
     # calculate some arrays we'll need
@@ -46,7 +57,7 @@ for filename in filenames:
     n2_min_inter = np.array([n2_inds[x-n2_min_inter_idx:x].sum() for x in range(n2_min_inter_idx, len(n2_inds))])
     stim_len_idx = int(np.round((stim_duration+analy_duration)/30))
     # find the first stimulation point
-    if not sum(n2_min):
+    if not sum(n2_min) or (n2_min.max() < n2_min_idx):
         print(f"Subject {subj} does not appear to sleep. Skipping...")
         continue
     # set current idx to first place with n2_min_idx of consecutive N2 sleep
@@ -75,8 +86,8 @@ for filename in filenames:
         cur_idx = last_idx + stim_len_idx + np.random.randint(*gap_idx_range)
         stim_idx += 1
     if stim_idx < min_stims:
-        print("\n\nFewer than 5 stimulations could be marked. Not saving...\n\n")
+        print(f"\n\nFewer than {min_stims} stimulations could be marked. Not saving...\n\n")
     else:
         print(f"\n\n{stim_idx} stimulations marked\n\n")
-        stim_annots.save(join(proc_dir, f"stim_NAP_{subj}_sham-annot.fif"), overwrite=True)
+        stim_annots.save(join(proc_dir, outfile), overwrite=overwrite)
 

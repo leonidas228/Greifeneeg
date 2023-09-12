@@ -20,6 +20,7 @@ between_duration = 60
 filelist = listdir(proc_dir)
 post_only = True
 exclude = ["1038", "1026", "1036"]
+exclude = []
 overwrite = True
 
 pre_trig = 70 # go back this far from the trigger

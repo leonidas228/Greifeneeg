@@ -86,26 +86,45 @@ minmax_freqs = [(0.16, 1.25), (0.75, 4.25)]
 minmax_times = [(0.8, 2), (0.25, 1)]
 osc_types = ["SO", "deltO"]
 includes = []
-skipped = []
+skipped = {"no_osc":[], "few_osc":[], "chan":[], "ROI":[]}
 
 root_dir = "/home/jev/hdd/sfb2/"
 proc_dir = join(root_dir, "proc")
 
-overwrite = True
+gap_dict = {
+            "1001":{"anodal":16, "cathodal":1060},
+            "1002":{"anodal":14, "cathodal":535},
+            "1003":{"anodal":14, "cathodal":994},
+            "1004":{"anodal":7, "cathodal":745},
+            "1005":{"anodal":7, "cathodal":1141},
+            "1006":{"anodal":41, "cathodal":859},
+            "1008":{"anodal":7, "cathodal":906},
+            "1011":{"anodal":7, "cathodal":995},
+            "1012":{"anodal":7, "cathodal":695},
+            "1013":{"anodal":14, "cathodal":798},
+            "1020":{"anodal":7, "cathodal":42},
+            "1021":{"anodal":8, "cathodal":28},
+            "1023":{"anodal":11, "cathodal":1147},
+            "1026":{"anodal":21, "cathodal":52},
+            "1036":{"anodal":23, "cathodal":76},
+            "1038":{"anodal":22, "cathodal":42},
+            "1042":{"anodal":18, "cathodal":25}
+}
+
 filelist = listdir(proc_dir)
-bad_list = []
 for filename in filelist:
     this_match = re.match("cp_NAP_(\d{4})_(.*)-raw.fif", filename)
     if not this_match:
         continue
     (subj, cond) = this_match.groups()
-    # if subj != "1001" or cond != "cathodal":
-    #     continue
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
+    # if subj == "1026" and cond == "anodal":
+    #     breakpoint()
     # mark bad channels
     picks = mne.pick_types(raw.info, eeg=True)
-    bcf = BadChannelFind(picks, thresh=0.6, neighb_n=4, vote_thresh=0.25)
+    bcf = BadChannelFind(picks, thresh=0.4, neighb_n=4, vote_thresh=0.5)
     bad_chans = bcf.recommend(raw)
+    #bad_chans = []
     print(bad_chans)
     raw.info["bads"].extend(bad_chans)
     # produce channel-ROI averages
@@ -114,6 +133,7 @@ for filename in filelist:
         pick_list = [vv for vv in v if vv not in raw.info["bads"]]
         if not len(pick_list):
             print("No valid channels")
+            skipped["chan"].append("{} {}".format(subj, cond))
             continue
         avg_signal = raw.get_data(pick_list).mean(axis=0, keepdims=True)
         avg_info = mne.create_info([k], raw.info["sfreq"], ch_types="eeg")
@@ -122,10 +142,28 @@ for filename in filelist:
         passed[idx] = 1
     if not all(passed):
         print("Could not produce valid ROIs")
-        bad_list.append(filename)
+        skipped["ROI"].append("{} {}".format(subj, cond))
+        
         continue
     # ROIs only, drop everything els
     raw.pick_channels(list(chan_groups.keys()))
+
+    # sort out conditiona and polarity
+    if cond == "sfb1":
+        cond = "sham"
+        polarity = "cathodal"
+    elif cond == "sham":
+        polarity = "anodal"
+    elif cond == "anodal":
+        cond = "stim"
+        polarity = "anodal"
+    elif cond == "cathodal":
+        cond = "stim"
+        polarity = "cathodal"
+    else:
+        raise ValueError("Could not organise condition/polarity")
+    gap = gap_dict[subj][polarity]
+    
 
     for minmax_freq, minmax_time, osc_type in zip(minmax_freqs, minmax_times, osc_types):
         raw_work = raw.copy()
@@ -134,6 +172,8 @@ for filename in filelist:
 
         # zero crossings
         for k in raw.ch_names:
+            df_dict = {"Subj":[],"Cond":[],"Index":[], "ROI":[], "Polarity":[],
+                       "OscType":[], "OscLen":[], "OscFreq":[], "Gap":[]}
             pick_ind = mne.pick_channels(raw_work.ch_names, include=[k])
             signal = raw_work.get_data()[pick_ind,].squeeze()
 
@@ -187,22 +227,24 @@ for filename in filelist:
                                         "Trough {} {}".format(moe.event_id, moe.event_annot))
                     new_annots.append(moe.peak_time, 0,
                                         "Peak {} {}".format(moe.event_id, moe.event_annot))
-                new_annots.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}-annot.fif"),
+                new_annots.save(join(proc_dir, 
+                                     f"osc_NAP_{subj}_{cond}_{k}_{osc_type}_{polarity}-annot.fif"),
                                 overwrite=True)
                 raw.set_annotations(new_annots)
             else:
-                skipped.append("{} {} {} {}".format(subj, cond, k, osc_type))
+                skipped["no_osc"].append("{} {} {} {} {}".format(subj, cond, k, osc_type, polarity))
                 print("\nNo oscillations found. Skipping.\n")
                 continue
 
             events = mne.events_from_annotations(raw, check_trough_annot)
-            df_dict = {"Subj":[],"Cond":[],"Index":[], "ROI":[],
-                        "OscType":[], "OscLen":[], "OscFreq":[]}
+
             for event_idx, event in enumerate(events[0][:,-1]):
                 eve = event.copy()
                 df_dict["Index"].append(int(eve))
                 df_dict["Subj"].append(subj)
                 df_dict["Cond"].append(cond)
+                df_dict["Polarity"].append(polarity)
+                df_dict["Gap"].append(gap)
                 df_dict["ROI"].append(k)
                 df_dict["OscType"].append(osc_type)
                 df_dict["OscLen"].append(marked_oe[event_idx].end_time - marked_oe[event_idx].start_time)
@@ -212,12 +254,12 @@ for filename in filelist:
             epo = mne.Epochs(raw, events[0], tmin=-2.5, tmax=2.5, detrend=1,
                              baseline=None, metadata=df, event_repeated="drop",
                              reject={"eeg":5e-4}).load_data()
-            if len(epo.ch_names) < 2:
-                breakpoint()
+                
             if len(epo) < 5:
-                breakpoint()
-            raw.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}-raw.fif"),
+                skipped["few_osc"].append("{} {} {} {} {}".format(subj, cond, k, osc_type, polarity))
+                continue
+            raw.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}_{polarity}-raw.fif"),
                      overwrite=True)
-            epo.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}-epo.fif"),
+            epo.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}_{polarity}-epo.fif"),
                      overwrite=True)
 

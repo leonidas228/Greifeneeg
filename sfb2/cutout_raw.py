@@ -10,7 +10,7 @@ cut away everything except the desired periods of time before and/or after stimu
 root_dir = "/home/jev/hdd/sfb2/"
 proc_dir = join(root_dir, "proc")
 
-overwrite = True
+overwrite = False
 filelist = listdir(proc_dir)
 for filename in filelist:
     # cycle through filenames which match the pattern
@@ -29,6 +29,11 @@ for filename in filelist:
     except:
         continue
     raw.set_annotations(annots)
+
+    # special cases
+    if subj == "1026" and cond == "anodal":
+        raw.crop(tmax=4180)
+
     # run through all the annotations, cutting out the pre or post stimulation ones (ignore stimulation itself)
     raws = []
     for annot in annots:
@@ -49,6 +54,7 @@ for filename in filelist:
                 pass
     # if there were no pre/post stimulation periods
     if len(raws) == 0:
+        breakpoint()
         continue
     # now merge into one file
     raw_cut = raws[0]
