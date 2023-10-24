@@ -35,18 +35,18 @@ Combines the epo files from mark_osc into one, grand_CHANNEL-epo.fif file
 ### tfr_epo.py
 Do a TFR analysis on the grand_epo SOs, compare anodal, cathodal, sham in a figure
 
-# erpac.py
+### erpac.py
 Do an ERPAC analysis on the grand epo SOs, compare anodal, cathodal, sham in separate figures
 
-# erpac_sham.py
+### erpac_sham.py
 Use ERPAC to compare anodal and cathodal sham with each other.
 
-# ttest_sham.py 
+### ttest_sham.py 
 Subjects-average, paired-sample t-test of the sham conditions with other, with multiple comparisons correction
 
-# ttest.py 
+### ttest.py 
 Subjects-average, paired-sample t-test of the anodal and cathodal stimulation against anodal sham, with multiple comparisons correction.
 
-# slope_est.py
+### slope_est.py
 Calculate the slope of the PSD for sham and stim conditions.
 
