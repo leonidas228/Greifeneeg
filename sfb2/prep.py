@@ -29,6 +29,7 @@ for filename in filelist:
         print("Already exists. Skipping.")
         continue
 
+
     # filtering and resampling
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
     raw.filter(l_freq=l_freq, h_freq=h_freq, n_jobs=n_jobs)

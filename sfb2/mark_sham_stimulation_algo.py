@@ -5,48 +5,17 @@ import re
 import numpy as np
 from gssc.infer import EEGInfer
 import matplotlib.pyplot as plt
+import pandas as pd
 plt.ion()
 
 """
 Algorithmically determines and marks stimulations on sham data
 """
 
-
-root_dir = "/home/jev/hdd/sfb2/"
-proc_dir = join(root_dir, "proc")
-
-stim_duration = 90
-analy_duration = 60
-gap_idx_range = [1, 3]
-min_stims = 3
-min_n2 = 4 # minimum minutes of N2 sleep for beginning
-min_n2_inter = 1 # same but for interval between stimulations
-overwrite = True
-
-ei = EEGInfer()
-filenames = listdir(proc_dir)
-for filename in filenames:
-    match = re.match("p_NAP_(\d{4})_(.*)-raw.fif", filename)
-    if match:
-        (subj, cond) = match.groups()
-    else:
-        continue
-        cond = "blah"
-    outfile = f"stim_NAP_{subj}_{cond}-annot.fif"
-    if cond != "sham" and cond != "sfb1":
-        continue
-    if outfile in filenames and not overwrite:
-        print(f"{outfile} already exists. Skipping...")
-        continue
-    (subj, cond) = match.groups()
-    
-    if subj != "1004":
-        continue
-    raw = mne.io.Raw(join(proc_dir, filename), preload=True)
-    raw.filter(l_freq=0.3, h_freq=30)
-    stages, times = ei.mne_infer(raw, eeg=["C3", "C4"], eog=["HEOG"])
+def annotate(raw, infer_chans):
+    chans_to_use = [c for c in infer_chans if c not in raw.info["bads"]]
+    stages, times = ei.mne_infer(raw, eeg=chans_to_use, eog=["HEOG"])
     hypno_annots = mne.Annotations(times, 30., stages.astype("str"))
-    breakpoint()
     ## mark the sham stimulation and pre/post periods
     stim_annots = mne.Annotations([], [], [])
     # calculate some arrays we'll need
@@ -59,7 +28,7 @@ for filename in filenames:
     # find the first stimulation point
     if not sum(n2_min) or (n2_min.max() < n2_min_idx):
         print(f"Subject {subj} does not appear to sleep. Skipping...")
-        continue
+        return None, 0
     # set current idx to first place with n2_min_idx of consecutive N2 sleep
     cur_idx = np.where(n2_min==n2_min_idx)[0][0] + n2_min_idx # add this because n2_min starts n2_min_idx ahead (see above)
     stim_annots.append(times[cur_idx], stim_duration, "BAD_Stimulation 0")
@@ -85,9 +54,56 @@ for filename in filenames:
         last_idx = cur_idx
         cur_idx = last_idx + stim_len_idx + np.random.randint(*gap_idx_range)
         stim_idx += 1
+    return stim_annots, stim_idx
+
+
+root_dir = "/home/jev/hdd/sfb2/"
+proc_dir = join(root_dir, "proc")
+
+stim_duration = 90
+analy_duration = 60
+gap_idx_range = [1, 3]
+min_stims = 3
+min_n2 = 4 # minimum minutes of N2 sleep for beginning
+min_n2_inter = 1 # same but for interval between stimulations
+overwrite = True
+backup_chans = ["C3", "C4"]
+infer_chans = ["C3", "C4", "FC1", "FC2"]
+
+df_dict = {"Subject":[], "Condition":[], "Stimulations":[]}
+ei = EEGInfer()
+filenames = listdir(proc_dir)
+for filename in filenames:
+    match = re.match("p_NAP_(\d{4})_(.*)-raw.fif", filename)
+    if match:
+        (subj, cond) = match.groups()
+    else:
+        continue
+    outfile = f"stim_NAP_{subj}_{cond}-annot.fif"
+    if cond != "sham" and cond != "sfb1":
+        continue
+    if outfile in filenames and not overwrite:
+        print(f"{outfile} already exists. Skipping...")
+        continue
+    
+    # if subj != "1006" or cond != "sfb1":
+    #     continue
+
+    raw = mne.io.Raw(join(proc_dir, filename), preload=True)
+    raw.filter(l_freq=0.3, h_freq=30)
+    stim_annots, stim_idx = annotate(raw, infer_chans)
     if stim_idx < min_stims:
-        print(f"\n\nFewer than {min_stims} stimulations could be marked. Not saving...\n\n")
+        print(f"\n\nFewer than {min_stims} stimulations could be marked. Trying again...\n\n")
+        stim_annots, stim_idx = annotate(raw, backup_chans)
+    if stim_idx < min_stims:
+        print(f"\n\nFewer than {min_stims} stimulations could be marked. Failed.\n\n")
     else:
         print(f"\n\n{stim_idx} stimulations marked\n\n")
         stim_annots.save(join(proc_dir, outfile), overwrite=overwrite)
+    df_dict["Subject"].append(subj)
+    df_dict["Condition"].append(cond)
+    df_dict["Stimulations"].append(stim_idx)
 
+df = pd.DataFrame.from_dict(df_dict)
+df = df.sort_values(["Subject", "Condition"])
+df.to_csv(join(proc_dir, "Stim_Ns.csv"))

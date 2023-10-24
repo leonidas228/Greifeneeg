@@ -32,7 +32,7 @@ def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
     so_sham_an = norm_overlay(epo["Cond=='sham' and Polarity=='anodal'"].average().data.squeeze())
     so_sham_ca = norm_overlay(epo["Cond=='sham' and Polarity=='cathodal'"].average().data.squeeze())
 
-    line_color = "black"
+    line_color = "white"
     # define layout of graph
     mos_str = """
             AABBCC
@@ -54,9 +54,9 @@ def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
     axes["B"].set_title(f"Sham Anodal ({sham_an_n})")
     axes["B"].plot(tfr_sham_an.times, so_sham_an, color=line_color)
 
-    (tfr_stim_an-tfr_sham_an).plot(vmin=vmin, vmax=vmax, axes=axes["C"])
+    (tfr_stim_an-tfr_sham_an).plot(vmin=vmin/2, vmax=vmax/2, axes=axes["C"])
     axes["C"].set_title("Stim - Sham Anodal")
-    axes["C"].plot(tfr_stim_an.times, so_stim_an, color=line_color)
+    axes["C"].plot(tfr_stim_an.times, so_stim_an, color="black")
 
     tfr_stim_ca.plot(vmin=0, vmax=vmax, axes=axes["D"], cmap="hot")
     axes["D"].set_title(f"Stimulation Cathodal ({stim_ca_n})")
@@ -66,9 +66,9 @@ def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
     axes["E"].set_title(f"Sham Cathodal ({sham_ca_n})")
     axes["E"].plot(tfr_sham_an.times, so_sham_ca, color=line_color)
 
-    (tfr_stim_ca-tfr_sham_ca).plot(vmin=vmin, vmax=vmax, axes=axes["F"])
+    (tfr_stim_ca-tfr_sham_ca).plot(vmin=vmin/2, vmax=vmax/2, axes=axes["F"])
     axes["F"].set_title("Stim - Sham Cathodal")
-    axes["F"].plot(tfr_stim_ca.times, so_stim_ca, color=line_color)
+    axes["F"].plot(tfr_stim_ca.times, so_stim_ca, color="black")
 
     plt.suptitle(title)
     plt.savefig(join(fig_dir, f"{title}.png"))
@@ -92,22 +92,23 @@ def graph_subjavg(ur_epo, title, ROI, vmin=-3, vmax=3):
         if 0 in (
             len(subj_epo.copy()["Cond=='stim' and Polarity=='anodal'"]),  
             len(subj_epo.copy()["Cond=='stim' and Polarity=='cathodal'"]),
-            len(subj_epo.copy()["Cond=='sham' and Polarity=='anodal'"]),
-            len(subj_epo.copy()["Cond=='sham' and Polarity=='cathodal'"])
+            len(subj_epo.copy()["Cond=='sham' and Polarity=='anodal'"])
             ):
-            print("crap")
+            print(f"crap {subj}")
             continue
 
         # get SO for overlays
         so_stim_an.append(subj_epo.copy()["Cond=='stim' and Polarity=='anodal'"].average())
         so_stim_ca.append(subj_epo.copy()["Cond=='stim' and Polarity=='cathodal'"].average())
         so_sham_an.append(subj_epo.copy()["Cond=='sham' and Polarity=='anodal'"].average())
-        so_sham_ca.append(subj_epo.copy()["Cond=='sham' and Polarity=='cathodal'"].average())
+        if len(subj_epo.copy()["Cond=='sham' and Polarity=='cathodal'"]):
+            so_sham_ca.append(subj_epo.copy()["Cond=='sham' and Polarity=='cathodal'"].average())
 
         tfr_stim_an.append(tfr_epo.copy()["Cond=='stim' and Polarity=='anodal'"].average())
         tfr_stim_ca.append(tfr_epo.copy()["Cond=='stim' and Polarity=='cathodal'"].average())
         tfr_sham_an.append(tfr_epo.copy()["Cond=='sham' and Polarity=='anodal'"].average())
-        tfr_sham_ca.append(tfr_epo.copy()["Cond=='sham' and Polarity=='cathodal'"].average())
+        if len(subj_epo.copy()["Cond=='sham' and Polarity=='cathodal'"]):
+            tfr_sham_ca.append(tfr_epo.copy()["Cond=='sham' and Polarity=='cathodal'"].average())
 
     so_stim_an = norm_overlay(mne.grand_average(so_stim_an).data.squeeze())
     so_stim_ca = norm_overlay(mne.grand_average(so_stim_ca).data.squeeze())
@@ -125,7 +126,7 @@ def graph_subjavg(ur_epo, title, ROI, vmin=-3, vmax=3):
     tfr_sham_ca = mne.grand_average(tfr_sham_ca)
 
 
-    line_color = "black"
+    line_color = "white"
     # define layout of graph
     mos_str = """
             AABBCC
@@ -143,9 +144,9 @@ def graph_subjavg(ur_epo, title, ROI, vmin=-3, vmax=3):
     axes["B"].set_title(f"Sham Anodal ({sham_an_n})")
     axes["B"].plot(tfr_sham_an.times, so_sham_an, color=line_color)
 
-    (tfr_stim_an-tfr_sham_an).plot(vmin=vmin, vmax=vmax, axes=axes["C"])
+    (tfr_stim_an-tfr_sham_an).plot(vmin=vmin/2, vmax=vmax/2, axes=axes["C"])
     axes["C"].set_title("Stim - Sham Anodal")
-    axes["C"].plot(tfr_stim_an.times, so_stim_an, color=line_color)
+    axes["C"].plot(tfr_stim_an.times, so_stim_an, color="black")
 
     tfr_stim_ca.plot(vmin=0, vmax=vmax, axes=axes["D"], cmap="hot")
     axes["D"].set_title(f"Stimulation Cathodal ({stim_ca_n})")
@@ -153,11 +154,11 @@ def graph_subjavg(ur_epo, title, ROI, vmin=-3, vmax=3):
 
     tfr_sham_ca.plot(vmin=0, vmax=vmax, axes=axes["E"], cmap="hot")
     axes["E"].set_title(f"Sham Cathodal ({sham_ca_n})")
-    axes["E"].plot(tfr_sham_an.times, so_sham_ca, color=line_color)
+    axes["E"].plot(tfr_sham_ca.times, so_sham_ca, color=line_color)
 
-    (tfr_stim_ca-tfr_sham_ca).plot(vmin=vmin, vmax=vmax, axes=axes["F"])
+    (tfr_stim_ca-tfr_sham_ca).plot(vmin=vmin/2, vmax=vmax/2, axes=axes["F"])
     axes["F"].set_title("Stim - Sham Cathodal")
-    axes["F"].plot(tfr_stim_ca.times, so_stim_ca, color=line_color)
+    axes["F"].plot(tfr_stim_ca.times, so_stim_ca, color="black")
 
     plt.suptitle(title)
     plt.savefig(join(fig_dir, f"{title}.png"))

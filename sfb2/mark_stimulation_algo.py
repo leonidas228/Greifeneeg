@@ -25,7 +25,7 @@ dur_dict = {344:"5m", 165:"2m", 73:"30s"}
 n_jobs = 24
 post_only = True
 exclude = ["1038", "1026", "1036"]
-overwrite = True
+overwrite = False
 
 filenames = listdir(proc_dir)
 for filename in filenames:

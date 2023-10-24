@@ -2,6 +2,7 @@ import mne
 from os import listdir
 import re
 import numpy as np
+import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
 from anoar import BadChannelFind
@@ -78,13 +79,13 @@ def mark_osc_amp(osc_events, amp_thresh, chan_name, mm_times, osc_type,
 
 
 
-chan_groups = {"frontal":["Fz", "FC1","FC2"],
-               "parietal":["Cz","CP1","CP2"]}
+chan_groups = {"frontal":["Fz", "FC1", "FC2"],
+               "parietal":["Cz", "CP1", "CP2"]}
 amp_percentile = 65
 min_samples = 10
 minmax_freqs = [(0.16, 1.25), (0.75, 4.25)]
 minmax_times = [(0.8, 2), (0.25, 1)]
-osc_types = ["SO", "deltO"]
+osc_types = ["SO"]
 includes = []
 skipped = {"no_osc":[], "few_osc":[], "chan":[], "ROI":[]}
 
@@ -117,19 +118,19 @@ for filename in filelist:
     if not this_match:
         continue
     (subj, cond) = this_match.groups()
+
+    c_groups = chan_groups.copy()
+    # special case
+    if subj == "1021":
+        if cond == "sham" or cond == "anodal":
+            c_groups["parietal"] = ["P1", "P2", "CPz"]
+            c_groups["frontal"] = ["F1", "Iz", "F2"]
+
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
-    # if subj == "1026" and cond == "anodal":
-    #     breakpoint()
-    # mark bad channels
     picks = mne.pick_types(raw.info, eeg=True)
-    bcf = BadChannelFind(picks, thresh=0.4, neighb_n=4, vote_thresh=0.5)
-    bad_chans = bcf.recommend(raw)
-    #bad_chans = []
-    print(bad_chans)
-    raw.info["bads"].extend(bad_chans)
-    # produce channel-ROI averages
-    passed = np.zeros(len(chan_groups), dtype=bool)
-    for idx, (k,v) in enumerate(chan_groups.items()):
+
+    passed = np.zeros(len(c_groups), dtype=bool)
+    for idx, (k,v) in enumerate(c_groups.items()):
         pick_list = [vv for vv in v if vv not in raw.info["bads"]]
         if not len(pick_list):
             print("No valid channels")
@@ -143,7 +144,6 @@ for filename in filelist:
     if not all(passed):
         print("Could not produce valid ROIs")
         skipped["ROI"].append("{} {}".format(subj, cond))
-        
         continue
     # ROIs only, drop everything els
     raw.pick_channels(list(chan_groups.keys()))
@@ -162,7 +162,7 @@ for filename in filelist:
         polarity = "cathodal"
     else:
         raise ValueError("Could not organise condition/polarity")
-    gap = gap_dict[subj][polarity]
+    # = gap_dict[subj][polarity]
     
 
     for minmax_freq, minmax_time, osc_type in zip(minmax_freqs, minmax_times, osc_types):
@@ -173,7 +173,7 @@ for filename in filelist:
         # zero crossings
         for k in raw.ch_names:
             df_dict = {"Subj":[],"Cond":[],"Index":[], "ROI":[], "Polarity":[],
-                       "OscType":[], "OscLen":[], "OscFreq":[], "Gap":[]}
+                       "OscType":[], "OscLen":[], "OscFreq":[]}
             pick_ind = mne.pick_channels(raw_work.ch_names, include=[k])
             signal = raw_work.get_data()[pick_ind,].squeeze()
 
@@ -211,7 +211,7 @@ for filename in filelist:
             amp_thresh = np.percentile(amps, amp_percentile)
 
             mark_osc_amp(osc_events, amp_thresh, k, minmax_time, osc_type,
-                            raw_inst=raw_work)
+                         raw_inst=raw_work)
             marked_oe = [oe for oe in osc_events if oe.event_id is not None]
             if len(marked_oe):
                 for moe_idx, moe in enumerate(marked_oe):
@@ -244,7 +244,7 @@ for filename in filelist:
                 df_dict["Subj"].append(subj)
                 df_dict["Cond"].append(cond)
                 df_dict["Polarity"].append(polarity)
-                df_dict["Gap"].append(gap)
+                #df_dict["Gap"].append(gap)
                 df_dict["ROI"].append(k)
                 df_dict["OscType"].append(osc_type)
                 df_dict["OscLen"].append(marked_oe[event_idx].end_time - marked_oe[event_idx].start_time)
@@ -255,7 +255,7 @@ for filename in filelist:
                              baseline=None, metadata=df, event_repeated="drop",
                              reject={"eeg":5e-4}).load_data()
                 
-            if len(epo) < 5:
+            if len(epo) < 25:
                 skipped["few_osc"].append("{} {} {} {} {}".format(subj, cond, k, osc_type, polarity))
                 continue
             raw.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}_{polarity}-raw.fif"),
@@ -263,3 +263,5 @@ for filename in filelist:
             epo.save(join(proc_dir, f"osc_NAP_{subj}_{cond}_{k}_{osc_type}_{polarity}-epo.fif"),
                      overwrite=True)
 
+with open(join(proc_dir, "skipped_record.pickle"), "wb") as f:
+    pickle.dump(skipped, f)

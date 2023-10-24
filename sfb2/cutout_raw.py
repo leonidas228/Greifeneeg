@@ -54,7 +54,6 @@ for filename in filelist:
                 pass
     # if there were no pre/post stimulation periods
     if len(raws) == 0:
-        breakpoint()
         continue
     # now merge into one file
     raw_cut = raws[0]

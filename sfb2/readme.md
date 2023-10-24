@@ -13,7 +13,7 @@ and saves as p*-raw.fif files
 ### mark_stimulation.py
 Grabs *p-raw.fif files, and marks stimulations on the basis of triggers. Saves as annotations.
 
-### mark_sham_stimulation.py
+### mark_sham_stimulation_algo.py
 Grabs *p-raw.fif files, and marks sham stimulations on the basis of an algorithm. Saves as annotations.
 
 ### cutout_raw.py
@@ -34,3 +34,19 @@ Combines the epo files from mark_osc into one, grand_CHANNEL-epo.fif file
 
 ### tfr_epo.py
 Do a TFR analysis on the grand_epo SOs, compare anodal, cathodal, sham in a figure
+
+# erpac.py
+Do an ERPAC analysis on the grand epo SOs, compare anodal, cathodal, sham in separate figures
+
+# erpac_sham.py
+Use ERPAC to compare anodal and cathodal sham with each other.
+
+# ttest_sham.py 
+Subjects-average, paired-sample t-test of the sham conditions with other, with multiple comparisons correction
+
+# ttest.py 
+Subjects-average, paired-sample t-test of the anodal and cathodal stimulation against anodal sham, with multiple comparisons correction.
+
+# slope_est.py
+Calculate the slope of the PSD for sham and stim conditions.
+

@@ -18,7 +18,7 @@ proc_dir = join(root_dir, "proc")
 
 filelist = listdir(proc_dir)
 exclude = ["1038", "1026", "1036"]
-overwrite = True
+overwrite = False
 
 duration = 120
 analy_duration = 60
