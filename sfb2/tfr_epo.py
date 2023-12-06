@@ -13,6 +13,8 @@ def norm_overlay(x, min=10, max=20, centre=15, xmax=4e-05):
     return x
 
 def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
+    subj = ur_epo.metadata.iloc[0]["Subj"]
+    print(subj)
     epo = ur_epo.copy()[f"ROI=='{ROI}'"]
     epo.pick_channels([ROI])
     tfr = tfr_morlet(epo, freqs, n_cycles, return_itc=False, average=False, output="power",
@@ -30,7 +32,8 @@ def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
     so_stim_an = norm_overlay(epo["Cond=='stim' and Polarity=='anodal'"].average().data.squeeze())
     so_stim_ca = norm_overlay(epo["Cond=='stim' and Polarity=='cathodal'"].average().data.squeeze())
     so_sham_an = norm_overlay(epo["Cond=='sham' and Polarity=='anodal'"].average().data.squeeze())
-    so_sham_ca = norm_overlay(epo["Cond=='sham' and Polarity=='cathodal'"].average().data.squeeze())
+    if sham_ca_n:
+        so_sham_ca = norm_overlay(epo["Cond=='sham' and Polarity=='cathodal'"].average().data.squeeze())
 
     line_color = "white"
     # define layout of graph
@@ -44,7 +47,8 @@ def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
     tfr_stim_an = tfr["Cond=='stim' and Polarity=='anodal'"].average()
     tfr_stim_ca = tfr["Cond=='stim' and Polarity=='cathodal'"].average()
     tfr_sham_an = tfr["Cond=='sham' and Polarity=='anodal'"].average()
-    tfr_sham_ca = tfr["Cond=='sham' and Polarity=='cathodal'"].average()
+    if sham_ca_n:
+        tfr_sham_ca = tfr["Cond=='sham' and Polarity=='cathodal'"].average()
 
     tfr_stim_an.plot(vmin=0, vmax=vmax, axes=axes["A"], cmap="hot")
     axes["A"].set_title(f"Stimulation Anodal ({stim_an_n})")
@@ -62,13 +66,14 @@ def graph(ur_epo, title, ROI, vmin=-3, vmax=3):
     axes["D"].set_title(f"Stimulation Cathodal ({stim_ca_n})")
     axes["D"].plot(tfr_stim_ca.times, so_stim_ca, color=line_color)
 
-    tfr_sham_ca.plot(vmin=0, vmax=vmax, axes=axes["E"], cmap="hot")
-    axes["E"].set_title(f"Sham Cathodal ({sham_ca_n})")
-    axes["E"].plot(tfr_sham_an.times, so_sham_ca, color=line_color)
+    if sham_ca_n:
+        tfr_sham_ca.plot(vmin=0, vmax=vmax, axes=axes["E"], cmap="hot")
+        axes["E"].set_title(f"Sham Cathodal ({sham_ca_n})")
+        axes["E"].plot(tfr_sham_an.times, so_sham_ca, color=line_color)
 
-    (tfr_stim_ca-tfr_sham_ca).plot(vmin=vmin/2, vmax=vmax/2, axes=axes["F"])
-    axes["F"].set_title("Stim - Sham Cathodal")
-    axes["F"].plot(tfr_stim_ca.times, so_stim_ca, color="black")
+        (tfr_stim_ca-tfr_sham_ca).plot(vmin=vmin/2, vmax=vmax/2, axes=axes["F"])
+        axes["F"].set_title("Stim - Sham Cathodal")
+        axes["F"].plot(tfr_stim_ca.times, so_stim_ca, color="black")
 
     plt.suptitle(title)
     plt.savefig(join(fig_dir, f"{title}.png"))
@@ -178,8 +183,8 @@ ur_epo = ur_epo["OscType=='SO'"]
 subjs = list(ur_epo.metadata["Subj"].unique())
 ROIs = list(ur_epo.metadata["ROI"].unique())
 for ROI in ROIs:
-    graph(ur_epo, f"all epochs {ROI}", ROI)
-    graph_subjavg(ur_epo, f"subj avg {ROI}", ROI)
+    # graph(ur_epo, f"all epochs {ROI}", ROI)
+    # graph_subjavg(ur_epo, f"subj avg {ROI}", ROI)
     for subj in subjs:
         subj_epo = ur_epo.copy()[f"Subj=='{subj}'"]
         graph(subj_epo, f"{subj} {ROI}", ROI, vmin=-6, vmax=6)
