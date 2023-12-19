@@ -30,7 +30,8 @@ def permute(perm_idx, a, b):
 root_dir = "/home/jev/hdd/sfb2/"
 proc_dir = join(root_dir, "proc")
 fig_dir = join(root_dir, "figs")
-freqs = np.linspace(12, 18, 50)
+min_freq, max_freq = 12, 18 
+freqs = np.linspace(min_freq, max_freq, 50)
 n_cycles = 5
 n_jobs = 24
 threshold = 0.05
@@ -38,10 +39,10 @@ vmin, vmax = -3, 3
 tfce_thresh = dict(start=0, step=0.2)
 analy_crop = [-1, 1]
 
-do_permute = False
+do_permute = True
 perm_n = 1024
 
-ur_epo = mne.read_epochs(join(proc_dir, f"grand-epo.fif"))
+ur_epo = mne.read_epochs(join(proc_dir, f"malik_grand-epo.fif"))
 ur_epo = ur_epo["OscType=='SO'"]
 subjs = list(ur_epo.metadata["Subj"].unique())
 ROIs = list(ur_epo.metadata["ROI"].unique())
@@ -67,7 +68,6 @@ for ROI in ROIs:
             len(subj_epo.copy()["Cond=='sham' and Polarity=='anodal'"])
             ):
             print("crap")
-            breakpoint()
             continue
 
         # get SO for overlays
@@ -79,9 +79,12 @@ for ROI in ROIs:
         tfr_stim_ca.append(tfr_epo.copy()["Cond=='stim' and Polarity=='cathodal'"].average())
         tfr_sham_an.append(tfr_epo.copy()["Cond=='sham' and Polarity=='anodal'"].average())
 
-    so_stim_an = norm_overlay(mne.grand_average(so_stim_an).data.squeeze())
-    so_stim_ca = norm_overlay(mne.grand_average(so_stim_ca).data.squeeze())
-    so_sham_an = norm_overlay(mne.grand_average(so_sham_an).data.squeeze())
+    so_stim_an = norm_overlay(mne.grand_average(so_stim_an).data.squeeze(),
+                              min=min_freq, max=max_freq)
+    so_stim_ca = norm_overlay(mne.grand_average(so_stim_ca).data.squeeze(),
+                              min=min_freq, max=max_freq)
+    so_sham_an = norm_overlay(mne.grand_average(so_sham_an).data.squeeze(),
+                              min=min_freq, max=max_freq)
 
     tfr_stim_an_dat = np.array([t.data for t in tfr_stim_an])
     tfr_stim_ca_dat = np.array([t.data for t in tfr_stim_ca])
