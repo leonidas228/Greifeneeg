@@ -1,0 +1,16 @@
+astropy
+gssc
+joblib
+matplotlib
+mne
+numpy
+pandas
+pycircstat
+scikit_learn
+scipy
+seaborn
+statsmodels
+tensorpac
+yasa
+sleepEEGpy
+meegkit

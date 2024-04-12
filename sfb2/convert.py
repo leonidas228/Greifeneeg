@@ -1,5 +1,5 @@
 import mne
-from os import listdir
+from os import listdir, getcwd
 from os.path import isdir, join
 import re
 
@@ -50,13 +50,13 @@ subj_badchans = {
 }
 
 
-root_dir = "/home/jev/hdd/sfb2/"
+root_dir = getcwd()
 
-raw_dir = join(root_dir, "raw") # get raw files from here
-proc_dir = join(root_dir, "proc") # save the processed files here
+raw_dir = join(root_dir, "data/raw") # get raw files from here
+proc_dir = join(root_dir, "data/proc") # save the processed files here
 filelist = listdir(raw_dir) # get list of all files in raw directory
 proclist = listdir(proc_dir) # and in proc directory
-overwrite = False
+overwrite = True
 
 #convert
 for dirname in filelist: # cycle through all files in raw directory
