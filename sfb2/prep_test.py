@@ -6,81 +6,85 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as scp
 from numpy.polynomial import Polynomial as poly
+from meegkit import detrend as dtr
+from annot_stim import annot_stim
 
 """
 Filter, resample, and organise the channels
 """
 
 
+def robust_detrending(chan,deg = 1, it= 5, thresh=0.1, meegkit=False):
 
-
-def robust_detrending(raw,thresh, channel=None):
-    data = raw.get_data(return_times=True, picks= channel)
-    times = np.asarray(data[1])
-    dummy_times = np.arange(len(times))
-    for chan in data[0]:
-        print(len(chan))
-        weight = np.ones((chan.shape[0]))
-        print('here?')
-        for p in range(5):    
-            temp = poly.fit(dummy_times,chan,1, w=weight)
+    if meegkit: 
+        return dtr.detrend(x, order, n_iter)[0]
+    else:
+        weight = np.ones(len(chan))
+        times = np.arange(len(chan))
+        for p in range(it):    
+            temp = poly.fit(times ,chan,deg, w=weight)
             val = temp.linspace(len(times))[1]
             dt = abs(val-chan)
             std = np.repeat(np.std(dt), len(chan))
-            print(std)
             weight = np.where (dt/std > thresh, 0,weight)
 
-        fitted = poly.fit(times, chan, 1,w=weight).linspace(len(times))[1]
-        chan-=fitted
+        fitted = poly.fit(times, chan, deg,w=weight).linspace(len(times))[1]
+        return chan-fitted
 
 
-def amp_annot_grad(raw, thresh, extend = 0.2, channel= None):
-    data = raw.get_data(return_times=True, picks = channel)
+
+
+def annot_grad(raw, thresh=None, extend = 0.2, channel= None, start= 0, stop = None):
+    data = raw.get_data(return_times=True, picks = channel, start= start, stop=stop)
     times = data[1]
     if channel:
         channel_list = channel
     else:
         channel_list = raw.ch_names
-    bad_ints = dict(onset= list(), duration=list(), description = list(), orig_time = list(), ch_names = list())
-    
+    annot_dict = dict(onset= list(), duration=list(), description = list(), orig_time = list(), ch_names = list())
+    if thresh: 
+ 
+        bad_jumps= mne.preprocessing.annotate_amplitude(raw, peak=thresh, min_duration=0.005,picks=channel)
+        annot_bad_jumps=bad_jumps[0]
+        annot_bad_jumps.onset-=0.2
+        annot_bad_jumps.duration+=0.4  
+        return annot_bad_jumps
+    else:
+        pend = np.zeros((len(channel_list),1))
+        derive = np.diff(data[0], axis=1,prepend=pend)
+        median = np.median(derive, axis=1)
+        firstq, thirdq = np.percentile(derive, [25, 75], axis = 1)
+        interquar = thirdq - firstq
+        thresh = median + 20*interquar
+    mask = np.zeros(np.shape(derive))
+    mask = np.where(abs(derive)>thresh[:, None], 1, mask)
+    segm = np.diff(mask, axis=1, append = pend)
+    onsets = np.argwhere(segm ==1)
+    offsets = np.argwhere(segm == -1)
+    new_on = [[] for _ in range(len(channel_list))]
 
-    for i, chan in enumerate(data[0]):
-        bad = np.zeros(len(times))
-        bad = np.where(abs(chan)>thresh, 1, bad)
-        bad = np.concatenate(([0], bad, [0]))
-        ann = np.argwhere((bad[:-1]+bad[1:])==1)
-        print(ann[0])
-        ann = ann[:,0]
-        print(ann[0])
-        bad_ints['onset']+=list(times[ann[::2]]-extend)
-        bad_ints['duration']+=list(times[ann[1::2]]-times[ann[::2]]+2*extend)
-        bad_ints['description']+=list(np.repeat('BAD_amplitude', len(ann[::2])))
-        bad_ints['orig_time']+=list(np.repeat(raw.info['meas_date'], len(ann[::2])))
-        bad_ints['ch_names']+=list(np.tile(channel_list[i], (len(ann[::2]),1)))
-    for key, value in bad_ints.items():
-        bad_ints[key] = np.asarray(value)
-        
-        derive = np.gradient(chan)
-        peaks = scp.signal.find_peaks(derive)[0]
-        print(len(chan))
-        print('++++++++++++++++++')
-        print(len(peaks))
-        bad_int = dict(onset= list(), duration=list())
-        for p in range(len(peaks)-1):
-            max_int = np.max(chan[peaks[p]:peaks[p+1]])
-            diff = abs(max_int-chan[peaks[p]])
-            if diff > thresh:
-                bad_int['onset'].append(times[peaks[p]]-extend)
-                bad_int['duration'].append(times[peaks[p]]-times[peaks[p+1]]+2*extend)
+    new_off = [[] for _ in range(len(channel_list))]
+    for i in range(len(offsets)):
+        new_on[onsets[i][0]].append(onsets[i][1])
+        new_off[offsets[i][0]].append(offsets[i][1])
 
-        description = "BAD_amplitude"
-        orig_time = raw.info['meas_date']
-    annot= mne.Annotations(onset= bad_int['onset'], duration= bad_int['duration'], description= 'bad_int', orig_time = raw.info['meas_date'])
+    for i, chan in enumerate(channel_list):
+        #print(i, chan, len(new_on[i]), len(new_off[i]))
+        annot_dict['onset']+=list(times[new_on[i]]-extend)
+        annot_dict['duration']+=list(times[new_off[i]]-times[new_on[i]]+2*extend)
+        annot_dict['description']+=list(np.repeat('BAD_amplitude', len(new_on[i])))
+        annot_dict['orig_time']+=list(np.repeat(raw.info['meas_date'], len(new_on[i])))
+        annot_dict['ch_names']+=list(np.tile(channel_list[i], (len(new_on[i]),1)))
+    for key, value in annot_dict.items():
+        annot_dict[key] = np.asarray(value)
+    annot= mne.Annotations(onset= annot_dict['onset'], duration= annot_dict['duration'], description= annot_dict['description'], orig_time = raw.info['meas_date'])
+
     return annot
 
 
-def amp_annot_abs(raw, thresh, extend = 0.2, channel= None):
-    data = raw.get_data(return_times=True, picks = channel)
+
+def annot_abs(raw, thresh= 7.5e-4, extend = 0.2, channel= None, start = 0, stop = None):
+    data = raw.get_data(return_times=True, picks = channel, start = start, stop= stop)
     times = data[1]
     if channel:
         channel_list = channel
@@ -89,39 +93,51 @@ def amp_annot_abs(raw, thresh, extend = 0.2, channel= None):
     bad_ints = dict(onset= list(), duration=list(), description = list(), orig_time = list(), ch_names = list())
     
 
-    for i, chan in enumerate(data[0]):
-        bad = np.zeros(len(times))
-        bad = np.where(abs(chan)>thresh, 1, bad)
-        bad = np.concatenate(([0], bad, [0]))
-        ann = np.argwhere((bad[:-1]+bad[1:])==1)
-        ann = ann[:,0]
-        bad_ints['onset']+=list(times[ann[::2]]-extend)
-        bad_ints['duration']+=list(times[ann[1::2]]-times[ann[::2]]+2*extend)
-        bad_ints['description']+=list(np.repeat('BAD_amplitude', len(ann[::2])))
-        bad_ints['orig_time']+= list(np.repeat(raw.info['meas_date'], len(ann[::2])))
-        bad_ints['ch_names']+=list(np.tile(channel_list[i], (len(ann[::2]),1)))
+    mask = np.zeros(np.shape(data[0]))
+    mask = np.where(abs(data[0])>thresh, 1, mask)
+    segm = np.diff(mask, axis=1)
+    onsets = np.argwhere(segm == 1)
+    offsets = np.argwhere(segm == -1)
+    new_on = [[] for _ in range(len(channel_list))]
+    new_off = [[] for _ in range(len(channel_list))]
+    for i in range(len(offsets)):
+        new_on[onsets[i][0]].append(onsets[i][1])
+        new_off[offsets[i][0]].append(offsets[i][1])
+    for i, chan in enumerate(channel_list):
+        bad_ints['onset']+=list(times[new_on[i]]-extend)
+        bad_ints['duration']+=list(times[new_off[i]]-times[new_on[i]]+2*extend)
+        bad_ints['description']+=list(np.repeat('BAD_amplitude_'+chan, len(new_on[i])))
+        bad_ints['orig_time']+= list(np.repeat(raw.info['meas_date'], len(new_on[i])))
+        bad_ints['ch_names']+=list(np.tile(channel_list[i], (len(new_on[i]),1)))
     for key, value in bad_ints.items():
         bad_ints[key] = np.asarray(value)
     annot= mne.Annotations(onset= bad_ints['onset'], duration= bad_ints['duration'], description= bad_ints['description'], ch_names = bad_ints['ch_names'], orig_time = raw.info['meas_date'])
     return annot
 
-def artifact_annot(raw):
-
-    bad_jumps= mne.preprocessing.annotate_amplitude(raw, peak=15e-5, min_duration=0.005, picks = ['Fp1'])
-    annot_bad_jumps=bad_jumps[0]
-    annot_bad_jumps.onset-=0.2
-    annot_bad_jumps.duration+=0.4  
-
-    annot_bad_int = amp_annot_abs(raw, thresh=5e-4, channel = ['Fp1'])
-    annot_bad_mov = amp_annot_abs(raw, thresh=15e-5, channel = ['Mov'])
+def artifact_annot(raw, channel = None, start = 0, stop = None):
+    annotations= []
+    annotations.append(annot_grad(raw, channel= channel, start = start, stop = stop))
+    annotations.append(annot_abs(raw, channel = channel, start = start, stop = stop))
+    annotations.append(annot_abs(raw, thresh=15e-5, channel = channel+['Mov'], start = start, stop = stop))
     
-    annot_all = annot_bad_int.__add__(annot_bad_jumps.__add__(annot_bad_mov))
+    annotations.append(annot_stim(raw)[1])
+    annot_all=annotations[0]
+    for i in range(1,len(annotations)):
+        annot_all = annot_all.__add__(annotations[i])
+    raw.set_annotations(annot_all)
 
-    raw.set_annotations(annot_bad_jumps)
+def data_by_annot(raw, description):
+    annots = raw.annotations.copy()
+
+    annot_idx= []
+    for i in range(len(annots)):
+        if annots[i]['description'] in description:
+            annot_idx.append(i) 
+    print(annot_idx) 
+    return annot_idx
 
 
-
-
+#def prep_interv(raw, 
 
 
 root_dir = getcwd()
@@ -147,23 +163,21 @@ for filename in filelist:
 
 
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
-    other = raw.copy()
-    names = raw.ch_names
-    names.remove('Fp1')
-    print(other.ch_names)
-    print(names)
-    other.drop_channels(names)
-    other.rename_channels({'Fp1':'other'})
-    print(other.ch_names)
-    raw.add_channels([other], force_update_info=True)
-    robust_detrending(raw, 0.5, ['Fp1'])
-    #artifact_annot(raw) 
+   
+    #ann = annot_abs(raw, channel = ['Fp1','Mov'])
+    #raw.set_annotations(annot_st)    
+    #idx = data_by_annot(raw, ['Post_Stimulation 0', 'Post_Stimulation 1', 'Post_Stimulation 2'] )
+    #times = (raw.annotations[idx[0]]['onset'], raw.annotations[idx[0]]['duration'])
+    artifact_annot(raw, channel=['Fz'], start = 0, stop = None)
+
+
+    #data= dtr.detrend(raw.get_data()[0],1,n_iter = 5)[0]
+    #raw._data=data
+
+    #raw.apply_function(wrap, ['Fp1'], channel_wise=True, **kwargs)
     
+    #artifact_annot(raw, channel = ['Fp1'],other= [annot_st]) 
         #raw.set_annotations(bad_mov)   
-    #bad= merge_annotations(bad_jumps, bad_mov)
-    #print(bad_mov) 
-    #bad= bad_jumps.__add__(bad_mov)
-    #raw.set_annotations(bad)
-    raw.plot(block=True, order=[0,-1])
+    raw.plot(block=True)# start = times[0], duration=times[1])
 
     break 

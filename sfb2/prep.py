@@ -52,19 +52,7 @@ for filename in filelist:
         raw.set_channel_types({"VEOG":"eog"})
     raw.save(join(proc_dir, outfile), overwrite=overwrite)
     
-    bad_jumps= mne.preprocessing.annotate_amplitude(raw, peak=5e-5, min_duration=0.005)
-    bad_channels = bad_jumps[1]
-    bad_jumps=bad_jumps[0]
     
-    #bad_segs = get_ptp_annotations(raw, ptp_thresh=5e-4, duration = 5)
-    bad_mov = get_ptp_annotations(raw, ptp_thresh=15e-5, duration = 1, channels = "Mov")
-    #raw.set_annotations(bad_segs)
-    #raw.set_annotations(bad_mov)   
-    #bad= merge_annotations(bad_jumps, bad_mov)
-    print(bad_mov.orig_time) 
-    print('+++++++++++++++++++++++++')
-    print(bad_jumps.orig_time)
-    bad= bad_jumps.__add__(bad_mov)
     raw.set_annotations(bad)
     raw.plot(block=True)
 
