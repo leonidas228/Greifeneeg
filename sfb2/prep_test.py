@@ -116,9 +116,9 @@ def annot_abs(raw, thresh= 7.5e-4, extend = 0.2, channel= None, start = 0, stop 
 
 def artifact_annot(raw, channel = None, start = 0, stop = None):
     annotations= []
-    annotations.append(annot_grad(raw, channel= channel, start = start, stop = stop))
-    annotations.append(annot_abs(raw, channel = channel, start = start, stop = stop))
-    annotations.append(annot_abs(raw, thresh=15e-5, channel = channel+['Mov'], start = start, stop = stop))
+    #annotations.append(annot_grad(raw, channel= channel, start = start, stop = stop))
+    #annotations.append(annot_abs(raw, channel = channel, start = start, stop = stop))
+    #annotations.append(annot_abs(raw, thresh=15e-5, channel = channel+['Mov'], start = start, stop = stop))
     
     annotations.append(annot_stim(raw)[1])
     annot_all=annotations[0]
@@ -132,7 +132,7 @@ def data_by_annot(raw, description):
     annot_idx= []
     for i in range(len(annots)):
         if annots[i]['description'] in description:
-            annot_idx.append(i) 
+            annot_idx.append((annots[i]['onset'],annots[i]['onset']+annots[i]['duration'])) 
     print(annot_idx) 
     return annot_idx
 
@@ -166,7 +166,6 @@ for filename in filelist:
    
     #ann = annot_abs(raw, channel = ['Fp1','Mov'])
     #raw.set_annotations(annot_st)    
-    #idx = data_by_annot(raw, ['Post_Stimulation 0', 'Post_Stimulation 1', 'Post_Stimulation 2'] )
     #times = (raw.annotations[idx[0]]['onset'], raw.annotations[idx[0]]['duration'])
     artifact_annot(raw, channel=['Fz'], start = 0, stop = None)
 

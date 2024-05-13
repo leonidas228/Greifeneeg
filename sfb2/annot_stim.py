@@ -27,19 +27,22 @@ def annot_stim(ur_raw, tfr_thresh_range = list(np.linspace(0.001,0.01,100)),
     raw = ur_raw.copy()
     spectrum = raw.compute_psd(method="multitaper", fmax=2, picks=picks, n_jobs=n_jobs)
     #raw.plot_psd(method='multitaper', fmax=2, picks = 'Fz')
+
     psd = spectrum.get_data().mean(axis=0)
     fmax = spectrum.freqs[np.argmax(psd)]
-    fmax= 1
+    fmax = 0.8
+    #plt.plot(spectrum.freqs, psd)
+    #plt.show(block=True)
     epo = mne.make_fixed_length_epochs(raw, duration=epolen)
-    power = tfr_morlet(epo, [fmax], n_cycles=5, picks=picks,
+    power = epo.compute_tfr(method='morlet', freqs=[fmax], n_cycles=5, picks=picks,
                         average=False, return_itc=False, n_jobs=n_jobs)
-    print(power)
+    #power.plot(0)
     tfr = np.zeros(0)
     for epo_tfr in power.__iter__():
         tfr = np.concatenate((tfr,np.mean(epo_tfr[:,0,],axis=0)))
     tfr_aschan = np.zeros(len(raw))
     tfr_aschan[:len(tfr)] = tfr
-
+    
     winner_std = np.inf
     for tfr_upper_thresh in tfr_thresh_range:
         these_annotations = raw.annotations.copy()
