@@ -69,7 +69,6 @@ def annot_grad(raw, thresh=None, extend = 0.2, channel= None, start= 0, stop = N
         new_off[offsets[i][0]].append(offsets[i][1])
 
     for i, chan in enumerate(channel_list):
-        #print(i, chan, len(new_on[i]), len(new_off[i]))
         annot_dict['onset']+=list(times[new_on[i]]-extend)
         annot_dict['duration']+=list(times[new_off[i]]-times[new_on[i]]+2*extend)
         annot_dict['description']+=list(np.repeat('BAD_amplitude', len(new_on[i])))
@@ -164,9 +163,6 @@ for filename in filelist:
 
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
    
-    #ann = annot_abs(raw, channel = ['Fp1','Mov'])
-    #raw.set_annotations(annot_st)    
-    #times = (raw.annotations[idx[0]]['onset'], raw.annotations[idx[0]]['duration'])
     artifact_annot(raw, channel=['Fz'], start = 0, stop = None)
 
 
