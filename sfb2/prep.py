@@ -4,7 +4,6 @@ from os.path import isdir, join
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import get_ptp_annotations
 
 """
 Filter, resample, and organise the channels
@@ -53,7 +52,4 @@ for filename in filelist:
     raw.save(join(proc_dir, outfile), overwrite=overwrite)
     
     
-    raw.set_annotations(bad)
-    raw.plot(block=True)
 
-    break 

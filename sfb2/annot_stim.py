@@ -81,21 +81,21 @@ def annot_stim(ur_raw, tfr_thresh_range = list(np.linspace(0.001,0.01,100)),
                 post_dur = between_duration
             if post_only:
                 these_annotations.append(begin, duration,
-                                            "BAD_Stimulation {}".format(stim_idx))
+                                            "BAD_Stimulation_{}".format(stim_idx))
                 if not stim_idx:
                     these_annotations.append(begin - pre_dur, pre_dur,
-                                                "Pre_Stimulation {}".format(stim_idx))
+                                                "Pre_Stimulation_{}".format(stim_idx))
                 these_annotations.append(begin + duration, post_dur,
-                                            "Post_Stimulation {}".format(stim_idx))
+                                            "Post_Stimulation_{}".format(stim_idx))
                 earliest_idx = idx
                 stim_idx += 1
             else:
                 these_annotations.append(begin, duration,
-                                            "BAD_Stimulation {}".format(stim_idx))
+                                            "BAD_Stimulation_{}".format(stim_idx))
                 these_annotations.append(begin - pre_dur, pre_dur,
-                                            "Pre_Stimulation {}".format(stim_idx))
+                                            "Pre_Stimulation_{}".format(stim_idx))
                 these_annotations.append(begin + duration, post_dur,
-                                            "Post_Stimulation {}".format(stim_idx))
+                                            "Post_Stimulation_{}".format(stim_idx))
                 earliest_idx = idx
                 stim_idx += 1
 

@@ -2,6 +2,7 @@ import mne
 from os import listdir, getcwd
 from os.path import isdir, join
 import re
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy as scp
@@ -42,9 +43,9 @@ def annot_grad(raw, thresh=None, extend = 0.2, channel= None, start= 0, stop = N
     else:
         channel_list = raw.ch_names
     annot_dict = dict(onset= list(), duration=list(), description = list(), orig_time = list(), ch_names = list())
+    pend = np.zeros((len(channel_list),1))
+    derive = np.diff(data[0], axis=1,prepend=pend, append= pend)[:,0:-1]
     if thresh==None: 
-        pend = np.zeros((len(channel_list),1))
-        derive = np.diff(data[0], axis=1,prepend=pend, append= pend)[:,0:-1]
         median = np.median(derive, axis=1)
         firstq, thirdq = np.percentile(derive, [25, 75], axis = 1)
         interquar = thirdq - firstq
@@ -54,16 +55,20 @@ def annot_grad(raw, thresh=None, extend = 0.2, channel= None, start= 0, stop = N
     segm = np.diff(mask, axis=1, prepend = pend, append = pend)[:,0:-1]
     onsets = np.argwhere(segm ==1)
     offsets = np.argwhere(segm == -1)
+    if len(onsets)!=len(offsets):
+        print(np.shape(segm))
+    print(len(onsets),len(offsets))
     new_on = [[] for _ in range(len(channel_list))]
 
     new_off = [[] for _ in range(len(channel_list))]
     for i in range(len(onsets)):
         new_on[onsets[i][0]].append(onsets[i][1])
+    for i in range(len(offsets)):
         new_off[offsets[i][0]].append(offsets[i][1])
 
     for i, chan in enumerate(channel_list):
-
-        #print((new_on[i],new_off[i]))
+        if len(new_on[i]) > len(new_off[i]):
+            new_off[i].append(new_on[i][-1])
         annot_dict['onset']+=list(times[new_on[i]]-extend)
         annot_dict['duration']+=list(times[new_off[i]]-times[new_on[i]]+2*extend)
         annot_dict['description']+=list(np.repeat('BAD_step_'+chan, len(new_on[i])))
@@ -95,10 +100,13 @@ def annot_abs(raw, thresh= 7.5e-4, extend = 0.2, channel= None, start = 0, stop 
     offsets = np.argwhere(segm == -1)
     new_on = [[] for _ in range(len(channel_list))]
     new_off = [[] for _ in range(len(channel_list))]
-    for i in range(len(offsets)):
+    for i in range(len(onsets)):
         new_on[onsets[i][0]].append(onsets[i][1])
+    for i in range(len(offsets)):
         new_off[offsets[i][0]].append(offsets[i][1])
     for i, chan in enumerate(channel_list):
+        if len(new_on[i]) > len(new_off[i]):
+            new_off[i].append(new_on[i][-1])
         bad_ints['onset']+=list(times[new_on[i]]-extend)
         bad_ints['duration']+=list(times[new_off[i]]-times[new_on[i]]+2*extend)
         bad_ints['description']+=list(np.repeat('BAD_amplitude_'+chan, len(new_on[i])))
@@ -120,22 +128,27 @@ def artifact_annot(raw, channel = None, start = 0, stop = None):
         old_annotations = old_annotations.__add__(new_annotations[i])
     raw.set_annotations(old_annotations)
 
-def data_by_annot(raw, description, extend = True):
+def data_by_annot(raw, description, extend=True, end_interval = True):
     times = raw.get_data(return_times = True)[1]
     annots = raw.annotations.copy()
     if extend:
-        description = description+".*"
+        description = [desc+'.*' for desc in description]
     annot_idx= []
     for i in range(len(annots)):
-        if re.match(description, annots[i]['description']):
-            annot_idx.append((list(times).index(annots[i]['onset']),list(times).index(annots[i]['onset']+annots[i]['duration']))) 
-    print(annot_idx) 
+        for j in range(len(description)):
+            if re.match(description[j], annots[i]['description']):
+                annot_idx.append((list(times).index(annots[i]['onset']),list(times).index(annots[i]['onset']+annots[i]['duration']), annots[i]['description']))
+    if end_interval:
+        annot_idx.append((annot_idx[-1][1]+1, len(times)-1, 'End'))
     return annot_idx
 
 
-def apply_detrend(data, intervals, deg = 1, n_iter= 5, thresh=0.1, meegkit=False):
+def apply_detrend(data, intervals, deg = 5, n_iter= 5, thresh=0.1, delta_t = None, meegkit=False):
     for i in range(len(intervals)):
-        data = robust_detrending(data[intervals[i][0]:intervals[i][1]], deg=deg,n_iter=n_iter,thresh=thresh, meegkit=False)
+        if delta_t:
+            deg=math.ceil((intervals[i][1]-intervals[i][0])*delta_t/10)
+            print(deg)
+        data[intervals[i][0]:intervals[i][1]] = robust_detrending(data[intervals[i][0]:intervals[i][1]], deg=deg,n_iter=n_iter,thresh=thresh, meegkit=False)
     return data
 
 
@@ -151,7 +164,7 @@ overwrite = True
 filelist = listdir(proc_dir)
 sfreqs = {}
 for filename in filelist:
-    this_match = re.match("p_NAP_(\d{4})_(.*)-raw.fif", filename)
+    this_match = re.match("NAP_(\d{4})_(.*)-raw.fif", filename)
     if not this_match:
         continue
     (subj, cond) = this_match.groups()
@@ -162,17 +175,42 @@ for filename in filelist:
 
 
     raw = mne.io.Raw(join(proc_dir, filename), preload=True)
+
+
+    #raw.filter(l_freq=l_freq, h_freq=h_freq, n_jobs=n_jobs)
+    raw.notch_filter(np.arange(50, h_freq+50, 50), n_jobs=n_jobs)
+    
+    raw.resample(sfreq, n_jobs=n_jobs)
+
+
+     # create EOG/EMG chanenls
+    if "HEOG" not in raw.ch_names:
+        raw = mne.set_bipolar_reference(raw, "Li", "Re", ch_name="HEOG")
+        raw.set_channel_types({"HEOG":"eog"})
+    if "Mov" not in raw.ch_names:
+        raw = mne.set_bipolar_reference(raw, "MovLi", "MovRe", ch_name="Mov")
+        raw.set_channel_types({"Mov":"emg"})
+    if "VEOG" not in raw.ch_names and "Vo" in raw.ch_names and "Vu" in raw.ch_names:
+        raw = mne.set_bipolar_reference(raw, "Vo", "Vu", ch_name="VEOG")
+        raw.set_channel_types({"VEOG":"eog"})
+
     raw.set_annotations(annot_stim(raw)[1]) 
-    idx = data_by_annot(raw, 'Post_Stimulation')
-
-    fit = robust_detrending(raw.get_data())
-
-
-    #raw = raw.apply_function(apply_detrend, intervals = idx)
+    idx = data_by_annot(raw, ['Pre_Stimulation','Post_Stimulation'], end_interval=True)
+    times = raw.get_data(return_times=True)[1]
+    delta_t = times[1]-times[0]
+    print(times)
+    
+    raw = raw.apply_function(apply_detrend, intervals = idx, meegkit = True, deg = 4,delta_t = delta_t)
     for i in range(len(idx)):
         artifact_annot(raw, start = idx[i][0], stop = idx[i][1])
 
-    
+
+    for i in range(len(idx)):
+        file_name = 'p_NAP_'+str(subj)+'_'+str(cond)+'_'+ idx[i][2]+'_raw.fif'
+        raw.save(join(proc_dir, file_name), overwrite=overwrite, tmin = times[idx[i][0]], tmax = times[idx[i][1]])
+    #raw.save(join(proc_dir, outfile), overwrite=overwrite)
+
+
     raw.plot(block=True)# start = times[0], duration=times[1])
 
     break 
